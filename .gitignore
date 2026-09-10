@@ -4,3 +4,4 @@
 !.env.example
 node_modules/
 .DS_Store
+docs/01_leader_setup_phase_roadmap.md

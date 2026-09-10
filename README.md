@@ -14,9 +14,11 @@ Core product implementation will begin during the official sprint.
 
 ## Documentation
 
-- `docs/00_challenge_a_rubric.md` is the team scoring contract.
-- `docs/01_leader_setup_phase_roadmap.md` is the leader's setup checklist.
-- `strategy-memo.md` is the initial score-maximization strategy.
+Start with [docs/README.md](docs/README.md) for the documentation map, ownership, and artifact status.
+
+Read [docs/12_git_collaboration_playbook.md](docs/12_git_collaboration_playbook.md) before your first commit.
+
+It defines our branch, commit, and pull-request rules.
 
 ## Sprint Integrity
 

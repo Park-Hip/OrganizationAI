@@ -2,21 +2,21 @@
 
 This repository tracks the MLAI Hackathon 2026 submission for Challenge A, The Escalation Referee.
 
-The selected workflow is a campus student-club event expense reimbursement referee.
+The current backend-development scenario is a synthetic campus student-club expense reimbursement referee. The participating club’s real manual workflow and pilot policy are pending validation.
 
-The product will automatically complete routine requests under a versioned pilot policy and safely escalate incomplete, out-of-policy, or authority-exceeding requests.
+The temporary evaluator completes only synthetic routine cases under the explicitly temporary `TMP-DEV-001` profile and safely escalates incomplete, out-of-policy, or authority-exceeding synthetic cases.
 
 ## Pre-Sprint Status
 
-This repository currently contains planning, policy preparation, research, and GitHub workflow templates only.
+This repository contains the temporary backend-development documentation, legacy planning material, and GitHub workflow templates.
 
-Core product implementation will begin during the official sprint.
+The temporary profile must be replaced before any real-workflow or policy claim is made.
 
 ## Documentation
 
 Start with [docs/README.md](docs/README.md) for the documentation map, ownership, and artifact status.
 
-Read [docs/12_git_collaboration_playbook.md](docs/12_git_collaboration_playbook.md) before your first commit.
+Read [docs/06_git_collaboration_playbook.md](docs/06_git_collaboration_playbook.md) before your first commit.
 
 It defines our branch, commit, and pull-request rules.
 

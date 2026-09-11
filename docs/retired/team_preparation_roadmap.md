@@ -42,11 +42,11 @@ Rubric label: Operational / Verify / New input / Users / Audit / Challenge A
 
 **Example task**
 
-> `POL-03 — Write reimbursement policy v0.1`  
-> Owner: Linh · Due: Tuesday 18:00  
-> Output: `02_policy.md`  
-> Done when: rule owner can verify required fields, eligible categories, amount limits, exceptions, and escalation owners.  
-> Dependency: user interview #1  
+> `POL-03 — Write reimbursement policy v0.1`
+> Owner: Linh · Due: Tuesday 18:00
+> Output: `02_policy.md`
+> Done when: rule owner can verify required fields, eligible categories, amount limits, exceptions, and escalation owners.
+> Dependency: user interview #1
 > Rubric: Challenge A, new judge input, audit.
 
 ---

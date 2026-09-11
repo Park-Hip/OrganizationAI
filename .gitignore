@@ -1,5 +1,4 @@
-.lavish/*
-!.lavish/INDEX.md
+.lavish/
 .env
 .env.*
 !.env.example

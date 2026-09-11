@@ -22,6 +22,13 @@ Until it is, the project uses an explicitly synthetic temporary development work
 | 4 | [04_temporary_system_contract.md](04_temporary_system_contract.md) | Exact temporary records, evaluator boundary, audit behavior, and service operations; not a future public API. | Temporary |
 | 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
 
+## Orientation & decisions
+
+- [07_system_overview.md](07_system_overview.md) — plain-language orientation: what we are building, its boundary, and what stays human. Orientation only; not the MVP specification.
+- [decisions/0001-backend-stack.md](decisions/0001-backend-stack.md) — decision record for the Python backend stack and its hard boundaries.
+
+Lavish research artifacts are managed in `.lavish/INDEX.md` — a local review inbox, not a source of truth. Durable conclusions are promoted here; superseded artifacts are retired under `.lavish/retired/`.
+
 ## Retired legacy documents
 
 The former product specification, proposed policy, contract, corpus, research plan, evidence map, runbook, logs, storyboard, roles, and preparation roadmap are preserved in [retired/](retired/). They are historical material only and must not be treated as the current source of truth.

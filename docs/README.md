@@ -39,6 +39,7 @@ The remaining documents provide the evidence, contracts, and operating instructi
 | [09_build_log.md](09_build_log.md) | Skeleton | Build disclosures, AI-tool use, decisions, and feature cuts. | Project lead |
 | [10_measurement_and_risk_log.md](10_measurement_and_risk_log.md) | Skeleton | Measurement plan, limitations, risks, mitigations, and decision record. | Project lead and QA |
 | [11_demo_storyboard.md](11_demo_storyboard.md) | Skeleton | Eight-minute judge journey, required slides, and video script. | Project lead and UI/UX |
+| [13_team_roles_and_handoffs.md](13_team_roles_and_handoffs.md) | Proposed | Accountable team roles, handoffs, independent checks, and support rules. | Project lead |
 
 ## Documentation rules
 
@@ -50,12 +51,6 @@ The remaining documents provide the evidence, contracts, and operating instructi
 - Update the evidence map when a requirement gains or loses proof.
 - Record material product decisions and feature cuts in the build log or risk log.
 - Keep local operating notes out of version control.
-
-## Local-only material
-
-`01_leader_setup_phase_roadmap.md` is intentionally ignored and remains a local operating document.
-
-It must not be added to commits.
 
 ## Documentation-phase completion check
 

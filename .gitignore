@@ -5,3 +5,9 @@
 node_modules/
 .DS_Store
 docs/01_leader_setup_phase_roadmap.md
+
+# local-only material
+.playwright-cli/
+docs/pdf/
+docs/team_preparation_roadmap.md
+output/

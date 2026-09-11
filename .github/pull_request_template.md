@@ -2,12 +2,18 @@
 
 Describe the user-visible change and why it is needed.
 
-## Rubric Mapping
+## Context
 
-- [ ] Operational 40
-- [ ] Users 20
-- [ ] Control 20
-- [ ] Decision 20
+Link the related issue(s) and explain the background or motivation for this change. Include any decisions, docs, or conversations that shaped the approach.
+
+## Changes
+
+- Describe what changed and why.
+- Call out any behavior changes reviewers should be aware of.
+
+## Files Changed
+
+List the key files or paths touched by this PR, or paste a short diff summary so reviewers know where to focus.
 
 ## Policy and Audit Impact
 
@@ -17,6 +23,12 @@ Describe the user-visible change and why it is needed.
 - [ ] This change changes none of the above.
 
 ## Verification
+
+Steps to reproduce and verify this change:
+
+1.
+2.
+3.
 
 - [ ] Automated tests pass.
 - [ ] The deployed production path was checked when applicable.

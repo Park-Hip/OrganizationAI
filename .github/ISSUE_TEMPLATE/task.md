@@ -10,12 +10,19 @@ assignees: ""
 
 Describe the single outcome this task must produce.
 
-## Rubric Mapping
+## Context
 
-- [ ] Operational 40
-- [ ] Users 20
-- [ ] Control 20
-- [ ] Decision 20
+Explain the background that motivated this task. Include links to related issues, decisions, docs, or conversations so a reviewer can understand why this matters without extra digging.
+
+## Scope
+
+- **Files or components affected:**
+- **In scope:**
+- **Out of scope (explicitly excluded):**
+
+## Proposed Approach
+
+Outline the intended solution and note any alternatives that were considered and rejected.
 
 ## Acceptance Criteria
 
@@ -24,10 +31,14 @@ Describe the single outcome this task must produce.
 - [ ] Evidence is attached in the project item.
 - [ ] A teammate has checked the result.
 
-## Evidence
+## Dependencies
 
-Add links to tests, commits, screenshots, consented quotes, or demo timestamps.
+List the people, systems, or decisions this task depends on.
 
 ## Risks and Blockers
 
 List dependencies or decisions that prevent completion.
+
+## Evidence
+
+Add links to tests, commits, screenshots, consented quotes, or demo timestamps.

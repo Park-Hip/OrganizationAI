@@ -29,15 +29,15 @@ The remaining documents provide the evidence, contracts, and operating instructi
 | [00_challenge_a_rubric.md](00_challenge_a_rubric.md) | Existing draft | Scoring contract, compliance gates, and proof requirements. | Project lead |
 | [01_project_spec.md](01_project_spec.md) | Draft v0.1 | Canonical workflow, product scope, requirements, and decision boundary. | Project lead |
 | [12_git_collaboration_playbook.md](12_git_collaboration_playbook.md) | Active | Member workflow plus enforced `main` protection and maintainer-only emergency bypass. | Every contributor |
-| [02_workflow_charter.md](02_workflow_charter.md) | Skeleton | Validated real workflow, participant roles, scope, exclusions, and sign-off state. | Project lead |
-| [03_pilot_policy_v0.1.md](03_pilot_policy_v0.1.md) | Skeleton | Versioned reimbursement rules, authority limits, and escalation owners. | Treasurer and president |
-| [04_case_corpus.csv](04_case_corpus.csv) | Skeleton | Labeled cases for policy tests, public Verify, and held-out robustness checks. | QA and policy owner |
+| [02_workflow_charter.md](02_workflow_charter.md) | Proposed (provisional) | Proposed synthetic workflow, participant roles, scope, exclusions, and sign-off state. | Project lead |
+| [03_pilot_policy_v0.1.md](03_pilot_policy_v0.1.md) | Proposed (provisional) | Proposed versioned reimbursement rules, authority parameters, and escalation owners. | Treasurer and president |
+| [04_case_corpus.csv](04_case_corpus.csv) | Proposed (8 synthetic seed cases) | Labeled cases for policy tests, public Verify, and held-out robustness checks. | QA and policy owner |
 | [05_user_research_plan.md](05_user_research_plan.md) | Skeleton | Consent, interview protocol, measures, and adverse-effect research. | Project lead |
-| [06_evidence_map.md](06_evidence_map.md) | Skeleton | Rubric-to-proof matrix with evidence location, owner, and status. | Project lead |
-| [07_system_contract.md](07_system_contract.md) | Skeleton | Shared request, decision, audit, state, and control contracts. | Decision engineer |
+| [06_evidence_map.md](06_evidence_map.md) | Proposed (provisional) | Rubric-to-proof matrix with evidence location, owner, and status. | Project lead |
+| [07_system_contract.md](07_system_contract.md) | Proposed (provisional) | Shared request, decision, audit, state, and control contracts. | Decision engineer |
 | [08_demo_runbook.md](08_demo_runbook.md) | Skeleton | Setup, deployment, Verify, recovery, and fresh-device checks. | Platform and QA |
 | [09_build_log.md](09_build_log.md) | Skeleton | Build disclosures, AI-tool use, decisions, and feature cuts. | Project lead |
-| [10_measurement_and_risk_log.md](10_measurement_and_risk_log.md) | Skeleton | Measurement plan, limitations, risks, mitigations, and decision record. | Project lead and QA |
+| [10_measurement_and_risk_log.md](10_measurement_and_risk_log.md) | Proposed (provisional) | Measurement plan, limitations, risks, mitigations, and decision record. | Project lead and QA |
 | [11_demo_storyboard.md](11_demo_storyboard.md) | Skeleton | Eight-minute judge journey, required slides, and video script. | Project lead and UI/UX |
 | [13_team_roles_and_handoffs.md](13_team_roles_and_handoffs.md) | Proposed | Accountable team roles, handoffs, independent checks, and support rules. | Project lead |
 

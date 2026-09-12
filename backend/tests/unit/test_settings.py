@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import logging
+
 import pytest
 from pydantic import ValidationError
 
-from app.core.settings import Settings
+from app.core.settings import Settings, get_settings
 
 
 @pytest.fixture(autouse=True)
@@ -50,6 +52,34 @@ def test_environment_overrides_defaults(monkeypatch: pytest.MonkeyPatch) -> None
 
     assert settings.environment == "test"
     assert settings.log_level == "DEBUG"
+
+
+def test_application_metadata_and_log_level_use_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg2://example:example@localhost:5432/research",
+    )
+    monkeypatch.setenv("APP_NAME", "Configured Decision Core")
+    monkeypatch.setenv("APP_VERSION", "9.9.9")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    get_settings.cache_clear()
+
+    root_logger = logging.getLogger()
+    previous_level = root_logger.level
+    try:
+        from app.main import create_app
+
+        application = create_app()
+
+        assert application.title == "Configured Decision Core"
+        assert application.version == "9.9.9"
+        assert root_logger.level == logging.DEBUG
+    finally:
+        root_logger.setLevel(previous_level)
+        get_settings.cache_clear()
 
 
 def test_database_url_rejects_non_postgres_scheme(

@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     """
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
+    logging.getLogger().setLevel(settings.log_level)
     application = FastAPI(title=settings.app_name, version=settings.app_version)
     application.include_router(health_router)
     logger.info(

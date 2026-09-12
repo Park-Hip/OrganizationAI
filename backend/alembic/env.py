@@ -26,7 +26,7 @@ def run_migrations_offline() -> None:
     """Run migrations in offline mode using the settings-provided URL."""
     settings = get_settings()
     context.configure(
-        url=settings.database_url,
+        url=settings.database_url.get_secret_value(),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -40,7 +40,7 @@ def run_migrations_online() -> None:
     """Run migrations against a live connection pool."""
     settings = get_settings()
     section = config.get_section(config.config_ini_section, {})
-    section["sqlalchemy.url"] = settings.database_url
+    section["sqlalchemy.url"] = settings.database_url.get_secret_value()
 
     connectable = engine_from_config(
         section,

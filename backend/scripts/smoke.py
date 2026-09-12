@@ -21,7 +21,7 @@ def main() -> int:
     print(
         f"Environment smoke OK: app={settings.app_name!r} "
         f"environment={settings.environment!r} log_level={settings.log_level!r} "
-        f"database_url={'configured' if settings.database_url else 'missing'}"
+        f"database_url={'configured' if settings.database_url.get_secret_value() else 'missing'}"
     )
     return 0
 

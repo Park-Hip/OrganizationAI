@@ -2,23 +2,36 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter
 from fastapi import status as http_status
 from fastapi.responses import JSONResponse
-from sqlalchemy import Engine, text
+from sqlalchemy import text
 
 from app.persistence.db import build_engine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health", summary="Service readiness probe")
-def health(engine: Engine = Depends(build_engine)) -> JSONResponse:
+@router.get(
+    "/health",
+    summary="Service readiness probe",
+    responses={
+        http_status.HTTP_200_OK: {"description": "Database reachable"},
+        http_status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Database unreachable"},
+    },
+)
+def health() -> JSONResponse:
     """Report process and database readiness without exposing credentials."""
     try:
+        engine = build_engine()
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
     except Exception:
+        logger.exception("health probe failed: database unreachable")
         return JSONResponse(
             status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "degraded", "database": "unreachable"},

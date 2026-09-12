@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,7 +27,14 @@ class Settings(BaseSettings):
     app_version: str = "0.1.0"
     environment: str = "development"
     log_level: str = "INFO"
-    database_url: str
+    database_url: SecretStr
+
+    @field_validator("database_url")
+    @classmethod
+    def _database_url_uses_postgres(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().startswith(("postgresql://", "postgresql+psycopg2://")):
+            raise ValueError("database_url must be a PostgreSQL connection URL")
+        return value
 
 
 @lru_cache

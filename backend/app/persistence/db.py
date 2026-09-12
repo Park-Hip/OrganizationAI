@@ -21,4 +21,4 @@ class Base(DeclarativeBase):
 def build_engine() -> Engine:
     """Build the SQLAlchemy engine from typed application settings."""
     settings = get_settings()
-    return create_engine(settings.database_url, pool_pre_ping=True)
+    return create_engine(settings.database_url.get_secret_value(), pool_pre_ping=True)

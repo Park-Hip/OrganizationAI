@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.persistence.db import build_engine
+from app.api import health as health_module
 
 
 class _FakeConnection:
@@ -22,35 +21,35 @@ class _FakeConnection:
         return None
 
 
-class _FakeEngine:
+class _ReachableEngine:
     def connect(self) -> _FakeConnection:
         return _FakeConnection()
 
 
-def test_health_is_reachable_when_database_responds(client: TestClient) -> None:
-    app = cast(FastAPI, client.app)
-    app.dependency_overrides[build_engine] = lambda: _FakeEngine()
-    try:
-        response = client.get("/health")
-    finally:
-        app.dependency_overrides.clear()
+class _UnreachableEngine:
+    def connect(self) -> _FakeConnection:
+        raise RuntimeError("database unavailable")
+
+
+def _patch_engine(monkeypatch: pytest.MonkeyPatch, engine: Any) -> None:
+    monkeypatch.setattr(health_module, "build_engine", lambda: engine)
+
+
+def test_health_is_ok_when_database_responds(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _patch_engine(monkeypatch, _ReachableEngine())
+
+    response = client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "reachable"}
 
 
 def test_health_is_degraded_when_database_is_unreachable(
-    client: TestClient,
-    monkeypatch: pytest.MonkeyPatch,
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from app.core.settings import get_settings
-
-    monkeypatch.setenv(
-        "DATABASE_URL",
-        "postgresql+psycopg2://nobody:nothing@127.0.0.1:65432/missing",
-    )
-    get_settings.cache_clear()
-    build_engine.cache_clear()
+    _patch_engine(monkeypatch, _UnreachableEngine())
 
     response = client.get("/health")
 

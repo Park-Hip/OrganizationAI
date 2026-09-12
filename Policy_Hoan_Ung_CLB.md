@@ -4,7 +4,7 @@
 
 Nguồn quy tắc cho agent hỗ trợ thủ quỹ — Task A
 
-> **Cách sử dụng tài liệu:** Đây là nguồn nội dung chính để đọc, review và chỉnh sửa trên GitHub. [Bản DOCX](Policy_Hoan_Ung_CLB.docx) phục vụ trình bày, in và ký; khi sửa Policy phải đồng bộ bản DOCX trước khi phát hành.
+> **Cách sử dụng tài liệu:** Đây là nguồn Policy dành cho con người, được đọc, review và chỉnh sửa trực tiếp trên GitHub. Nếu thay đổi logic nghiệp vụ, phải đồng bộ `policy_rules.yaml`, `reimbursement.schema.json` và các bộ kiểm thử liên quan.
 
 | Thuộc tính | Giá trị |
 | --- | --- |

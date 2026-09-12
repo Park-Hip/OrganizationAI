@@ -7,7 +7,6 @@ Kho lưu trữ này là gói Policy có thể dùng làm nguồn quy tắc cho a
 ## Bộ bàn giao
 
 - [`Policy_Hoan_Ung_CLB.md`](Policy_Hoan_Ung_CLB.md): nguồn nội dung chính, đọc và chỉnh sửa trực tiếp trên GitHub.
-- [`Policy_Hoan_Ung_CLB.docx`](Policy_Hoan_Ung_CLB.docx): bản trình bày để tải xuống, in và ký.
 - [`policy_rules.yaml`](policy_rules.yaml): quy tắc máy đọc được, có mã, nguồn, ưu tiên, điều kiện và kết quả.
 - [`reimbursement.schema.json`](reimbursement.schema.json): JSON Schema cho hồ sơ, cấu hình, kết quả xử lý, chuyển tiếp và audit.
 - [`test_cases.json`](test_cases.json): 16 ca kiểm thử tổng hợp, không chứa dữ liệu thật.
@@ -18,9 +17,9 @@ Kho lưu trữ này là gói Policy có thể dùng làm nguồn quy tắc cho a
 1. Mở [`Policy_Hoan_Ung_CLB.md`](Policy_Hoan_Ung_CLB.md).
 2. Chọn biểu tượng bút chì **Edit this file**.
 3. Tạo nhánh mới, ghi nội dung thay đổi và mở Pull Request để review.
-4. Sau khi nội dung được duyệt, đồng bộ bản DOCX trước khi phát hành phiên bản mới.
+4. Sau khi nội dung được duyệt, cập nhật phiên bản Policy và các tệp quy tắc liên quan nếu logic thay đổi.
 
-Không chỉnh riêng DOCX rồi bỏ qua Markdown. Nếu hai bản khác nhau, bản Markdown là nguồn nội dung để đối chiếu; bản DOCX chỉ là bản trình bày của cùng phiên bản Policy.
+`Policy_Hoan_Ung_CLB.md` là nguồn nội dung dành cho con người và là bản Policy duy nhất được duy trì trong repository.
 
 ## Hợp đồng đầu ra
 
@@ -99,4 +98,4 @@ Tiêu chí Verify: 3/3 ca thường quy được xử lý; 2/2 ca cần chuyển
 
 ## Cơ sở tham chiếu
 
-Policy được rà soát đến ngày 12/09/2026 theo Luật Kế toán 88/2015/QH13; chế độ kế toán áp dụng cho đơn vị chủ quản; quy định hiện hành về hóa đơn, thuế, thanh toán không dùng tiền mặt và bảo vệ dữ liệu cá nhân. Mẫu tương thích về trường thông tin với 04-TT và 05-TT của Thông tư 99/2025/TT-BTC, nhưng không mặc định chế độ kế toán doanh nghiệp áp dụng trực tiếp cho mọi câu lạc bộ. Chi tiết URL và điều kiện áp dụng nằm trong DOCX và YAML.
+Policy được rà soát đến ngày 12/09/2026 theo Luật Kế toán 88/2015/QH13; chế độ kế toán áp dụng cho đơn vị chủ quản; quy định hiện hành về hóa đơn, thuế, thanh toán không dùng tiền mặt và bảo vệ dữ liệu cá nhân. Mẫu tương thích về trường thông tin với 04-TT và 05-TT của Thông tư 99/2025/TT-BTC, nhưng không mặc định chế độ kế toán doanh nghiệp áp dụng trực tiếp cho mọi câu lạc bộ. Chi tiết URL và điều kiện áp dụng nằm trong bản Policy Markdown và YAML.

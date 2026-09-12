@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the Decision Core backend."""
+"""Shared pytest fixtures for the OrganizationalAI backend."""
 
 from __future__ import annotations
 

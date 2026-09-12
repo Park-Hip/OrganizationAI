@@ -1,4 +1,4 @@
-# Decision Core backend (temporary)
+# OrganizationalAI backend (temporary)
 
 This directory is the temporary backend development foundation for the L0 contract-and-tooling task.
 It contains no policy evaluation, no domain tables, and no public API yet.

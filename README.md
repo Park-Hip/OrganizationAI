@@ -1,4 +1,4 @@
-# OrganizationAI - Challenge A
+# OrganizationalAI - Challenge A
 
 This repository tracks the MLAI Hackathon 2026 submission for Challenge A, The Escalation Referee.
 

@@ -1,1 +1,1 @@
-"""Decision Core backend application package (temporary L0 foundation)."""
+"""OrganizationalAI backend application package (temporary L0 foundation)."""

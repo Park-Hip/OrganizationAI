@@ -1,1 +1,1 @@
-"""HTTP transport layer for the Decision Core backend."""
+"""HTTP transport layer for the OrganizationalAI backend."""

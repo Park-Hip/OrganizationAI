@@ -27,7 +27,7 @@ def test_defaults_apply_when_only_database_url_is_provided(
 
     settings = Settings(_env_file=None)
 
-    assert settings.app_name == "Decision Core"
+    assert settings.app_name == "OrganizationalAI"
     assert settings.app_version == "0.1.0"
     assert settings.environment == "development"
     assert settings.log_level == "INFO"
@@ -61,7 +61,7 @@ def test_application_metadata_and_log_level_use_settings(
         "DATABASE_URL",
         "postgresql+psycopg2://example:example@localhost:5432/research",
     )
-    monkeypatch.setenv("APP_NAME", "Configured Decision Core")
+    monkeypatch.setenv("APP_NAME", "Configured OrganizationalAI")
     monkeypatch.setenv("APP_VERSION", "9.9.9")
     monkeypatch.setenv("ENVIRONMENT", "test")
     monkeypatch.setenv("LOG_LEVEL", "DEBUG")
@@ -74,7 +74,7 @@ def test_application_metadata_and_log_level_use_settings(
 
         application = create_app()
 
-        assert application.title == "Configured Decision Core"
+        assert application.title == "Configured OrganizationalAI"
         assert application.version == "9.9.9"
         assert root_logger.level == logging.DEBUG
     finally:

@@ -23,7 +23,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    app_name: str = "Decision Core"
+    app_name: str = "OrganizationalAI"
     app_version: str = "0.1.0"
     environment: str = "development"
     log_level: str = "INFO"

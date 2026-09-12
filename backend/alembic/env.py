@@ -1,4 +1,4 @@
-"""Alembic environment for the temporary Decision Core backend.
+"""Alembic environment for the temporary OrganizationalAI backend.
 
 The database URL comes from typed application settings rather than
 alembic.ini so credentials live only in the ignored environment file.

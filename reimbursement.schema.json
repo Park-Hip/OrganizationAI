@@ -1,22 +1,35 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://organizationai.example/schemas/reimbursement.schema.json",
-  "title": "OrganizationAI Reimbursement Evaluation Envelope",
+  "title": "OrganizationAI Reimbursement Processing Envelope",
   "type": "object",
   "additionalProperties": false,
-  "required": ["policy_version", "organization_profile", "case", "decision", "audit_events"],
+  "required": ["policy_version", "organization_profile", "case", "control_state", "audit_events"],
   "properties": {
     "policy_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "organization_profile": {"$ref": "#/$defs/OrganizationProfile"},
     "case": {"$ref": "#/$defs/ReimbursementCase"},
-    "decision": {"$ref": "#/$defs/Decision"},
+    "control_state": {"enum": ["ACTIVE", "PAUSED"], "description": "Trạng thái vận hành, không phải nhãn dự đoán"},
+    "processing_outcome": {"$ref": "#/$defs/ProcessingOutcome"},
     "escalation": {"$ref": "#/$defs/Escalation"},
     "audit_events": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/AuditEvent"}}
   },
   "allOf": [
     {
-      "if": {"properties": {"decision": {"properties": {"status": {"enum": ["NEEDS_FACT", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]}}, "required": ["status"]}}},
+      "if": {"properties": {"control_state": {"const": "ACTIVE"}}, "required": ["control_state"]},
+      "then": {"required": ["processing_outcome"]}
+    },
+    {
+      "if": {"properties": {"control_state": {"const": "PAUSED"}}, "required": ["control_state"]},
+      "then": {"not": {"anyOf": [{"required": ["processing_outcome"]}, {"required": ["escalation"]}]}}
+    },
+    {
+      "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ESCALATED"}}, "required": ["processing_result"]}}, "required": ["processing_outcome"]},
       "then": {"required": ["escalation"]}
+    },
+    {
+      "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ROUTINE_PROCESSED"}}, "required": ["processing_result"]}}, "required": ["processing_outcome"]},
+      "then": {"not": {"required": ["escalation"]}}
     }
   ],
   "$defs": {
@@ -33,14 +46,14 @@
     },
     "OrganizationProfile": {
       "type": "object", "additionalProperties": false,
-      "required": ["profile_id", "parent_organization", "accounting_regime", "tax_regime_applies", "currency", "auto_process_max_vnd", "submission_deadline_business_days", "non_cash_evidence_threshold_vnd", "no_self_approval", "agent_can_transfer_money"],
+      "required": ["profile_id", "parent_organization", "accounting_regime", "tax_regime_applies", "currency", "routine_processing_max_vnd", "submission_deadline_business_days", "non_cash_evidence_threshold_vnd", "no_self_approval", "agent_can_approve", "agent_can_reject", "agent_can_transfer_money"],
       "properties": {
         "profile_id": {"type": "string"},
         "parent_organization": {"type": "string"},
         "accounting_regime": {"type": "string"},
         "tax_regime_applies": {"type": "boolean"},
         "currency": {"const": "VND"},
-        "auto_process_max_vnd": {"$ref": "#/$defs/Money"},
+        "routine_processing_max_vnd": {"$ref": "#/$defs/Money"},
         "submission_deadline_business_days": {"type": "integer", "minimum": 0},
         "non_cash_evidence_threshold_vnd": {"$ref": "#/$defs/Money"},
         "aggregation_keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
@@ -48,6 +61,8 @@
         "conditional_categories": {"type": "array", "items": {"type": "string"}},
         "prohibited_categories": {"type": "array", "items": {"type": "string"}},
         "no_self_approval": {"const": true},
+        "agent_can_approve": {"const": false},
+        "agent_can_reject": {"const": false},
         "agent_can_transfer_money": {"const": false}
       }
     },
@@ -83,7 +98,7 @@
         "payment_method": {"enum": ["CASH", "BANK_TRANSFER", "CARD", "E_WALLET", "OTHER"]},
         "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "suspicion_flags": {"type": "array", "items": {"type": "string"}},
-        "line_decision": {"enum": ["PENDING", "ACCEPTED", "NOT_ACCEPTED"]}
+        "line_assessment": {"enum": ["PENDING", "ELIGIBLE", "FACT_UNKNOWN", "OUT_OF_POLICY"]}
       }
     },
     "ReimbursementCase": {
@@ -135,20 +150,35 @@
         "resume_action": {"type": "string", "minLength": 10}
       }
     },
-    "Decision": {
+    "ProcessingOutcome": {
       "type": "object", "additionalProperties": false,
-      "required": ["decision_id", "status", "accepted_total_vnd", "amount_to_return_vnd", "additional_payment_vnd", "triggered_rule_ids", "evidence_used", "explanation_vi", "created_at"],
+      "required": ["outcome_id", "processing_result", "escalation_type", "approval_status", "triggered_rule_ids", "evidence_used", "explanation_vi", "created_at"],
       "properties": {
-        "decision_id": {"type": "string"},
-        "status": {"enum": ["AUTO_PROCESS", "NEEDS_FACT", "OUT_OF_POLICY", "AUTHORITY_REQUIRED", "REJECTED_BY_RULE", "PAUSED"]},
-        "accepted_total_vnd": {"$ref": "#/$defs/Money"},
+        "outcome_id": {"type": "string"},
+        "processing_result": {"enum": ["ROUTINE_PROCESSED", "ESCALATED"]},
+        "escalation_type": {"type": ["string", "null"], "enum": [null, "FACT_UNKNOWN", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]},
+        "approval_status": {"const": "PENDING_HUMAN_APPROVAL"},
+        "eligible_total_vnd": {"$ref": "#/$defs/Money", "description": "Tổng đủ điều kiện đề xuất; không phải số tiền đã được phê duyệt"},
         "amount_to_return_vnd": {"$ref": "#/$defs/Money"},
         "additional_payment_vnd": {"$ref": "#/$defs/Money"},
         "triggered_rule_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "evidence_used": {"type": "array", "items": {"type": "string"}},
         "explanation_vi": {"type": "string", "minLength": 20},
         "created_at": {"type": "string", "format": "date-time"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"processing_result": {"const": "ROUTINE_PROCESSED"}}, "required": ["processing_result"]},
+          "then": {
+            "properties": {"escalation_type": {"const": null}},
+            "required": ["eligible_total_vnd", "amount_to_return_vnd", "additional_payment_vnd"]
+          }
+        },
+        {
+          "if": {"properties": {"processing_result": {"const": "ESCALATED"}}, "required": ["processing_result"]},
+          "then": {"properties": {"escalation_type": {"enum": ["FACT_UNKNOWN", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]}}}
+        }
+      ]
     },
     "AuditEvent": {
       "type": "object", "additionalProperties": false,
@@ -160,13 +190,13 @@
         "actor_type": {"enum": ["AGENT", "HUMAN", "SYSTEM"]},
         "actor_role": {"type": "string"},
         "policy_version": {"type": "string"},
-        "event_type": {"enum": ["RECEIVED", "VALIDATED", "RULE_TRIGGERED", "DECIDED", "PAUSED", "RESUMED", "OVERRIDDEN", "UNDONE"]},
+        "event_type": {"enum": ["RECEIVED", "VALIDATED", "RULE_TRIGGERED", "CLASSIFIED", "PAUSED", "RESUMED", "OVERRIDDEN", "UNDONE"]},
         "input_hash": {"type": "string", "minLength": 8},
         "triggered_rule_ids": {"type": "array", "items": {"type": "string"}},
-        "decision_id": {"type": "string"},
+        "outcome_id": {"type": "string"},
         "explanation": {"type": "string"},
         "reason": {"type": "string"},
-        "previous_decision_id": {"type": "string"},
+        "previous_outcome_id": {"type": "string"},
         "target_audit_event_id": {"type": "string"}
       }
     }

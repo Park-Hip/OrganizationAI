@@ -1,14 +1,14 @@
-# L0 Contract Baseline - Derived Implementation Record
+# L0 Contract Baseline - Durable Implementation Record
 
 ## Document control
 
-**Status:** Derived implementation record for the L0 foundation.
-Non-authoritative and explicitly non-policy.
+**Status:** Durable L0 implementation baseline.
+It is derived from the current temporary development chain, does not supersede its source documents, and is explicitly non-policy.
 
 **Depends on:** [04_temporary_system_contract.md](04_temporary_system_contract.md), [03_temporary_demo_policy.md](03_temporary_demo_policy.md), [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv), and [01_temporary_manual_workflow.md](01_temporary_manual_workflow.md).
 
-**Not a claim:** This record restates no new business rules.
-It only maps the current temporary documents to implementation boundaries so later layers share one interpretation.
+**Authority:** The documents listed above remain authoritative for temporary backend behavior.
+This baseline restates no new business rules and maps their implementation boundaries so later layers share one interpretation.
 It does not make the temporary workflow, categories, threshold, or reviewer route real.
 
 ## Purpose

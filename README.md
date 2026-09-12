@@ -24,7 +24,7 @@ It defines our branch, commit, and pull-request rules.
 
 The backend foundation lives in [backend/](backend/) and is temporary, synthetic, and unvalidated.
 Read [backend/README.md](backend/README.md) for clean-clone prerequisites, setup, and quality commands.
-The L0 contract baseline in [docs/07_l0_contract_baseline.md](docs/07_l0_contract_baseline.md) maps the current temporary documents to implementation boundaries.
+The durable L0 contract baseline in [docs/07_l0_contract_baseline.md](docs/07_l0_contract_baseline.md) maps the current temporary documents to implementation boundaries without superseding them.
 The backend does not yet evaluate policy, persist cases, expose a public API, or make any real workflow claim.
 
 ## Sprint Integrity

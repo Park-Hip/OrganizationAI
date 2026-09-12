@@ -30,7 +30,7 @@ The former product specification, proposed policy, contract, corpus, research pl
 
 - Follow [06_git_collaboration_playbook.md](06_git_collaboration_playbook.md) for every branch, commit, and pull request.
 - Use the temporary development chain only to implement/test synthetic backend behavior.
-- Mark every temporary record, result, and UI/API response with its synthetic/unvalidated provenance.
+- Mark every temporary record, result, and business-operation UI/API response with its synthetic/unvalidated provenance. The operational `/health` readiness response is exempt and retains its minimal status/database contract.
 - Do not copy `TEST_ALLOWED`, `TEST_BLOCKED`, `1000`, or temporary `TREASURER` routing into a real club policy.
 - Do not place real personal, financial, receipt, vendor, or bank data in committed artifacts.
 - When a teammate validates the real workflow, replace the temporary chain in a controlled migration: manual workflow → MVP specification → pilot policy → system contract → case corpus.

@@ -2,7 +2,9 @@
 
 ## Project
 
-OrganizationAI 2026 submission for Challenge A: The Escalation Referee.
+OrganizationalAI 2026 submission for Challenge A: The Escalation Referee.
+
+The product and service name is `OrganizationalAI`.
 
 Read `docs/README.md` first. Treat the documents it links as the source of truth.
 

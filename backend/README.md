@@ -1,7 +1,8 @@
 # OrganizationalAI backend (temporary)
 
 This directory is the temporary backend development foundation for the L0 contract-and-tooling task.
-It contains no policy evaluation, no domain tables, and no public API yet.
+It contains no policy evaluation, no domain tables, and no public product API yet.
+Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
 No real reimbursement workflow, payment, or policy claim is implied.
@@ -74,7 +75,7 @@ It stops on the first failure and returns that exit code.
 
 ## Temporary provenance
 
-Every later layer must keep these markers on persisted records and responses:
+Every later layer must keep these markers on persisted records and business-operation responses:
 
 | Field | Value |
 | --- | --- |
@@ -84,6 +85,7 @@ Every later layer must keep these markers on persisted records and responses:
 | `workflow_validation_status` | `UNVALIDATED` |
 
 Do not treat `TEST_ALLOWED`, `TEST_BLOCKED`, `1000`, or `TREASURER` as real club practice.
+The operational `/health` readiness response is intentionally exempt and retains its minimal status/database contract.
 
 ## Not in L0 scope
 

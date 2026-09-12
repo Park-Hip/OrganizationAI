@@ -11,3 +11,14 @@ docs/01_leader_setup_phase_roadmap.md
 docs/pdf/
 docs/team_preparation_roadmap.md
 output/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*

@@ -25,7 +25,7 @@ cp .env.example .env
 ```
 
 `.env` is git-ignored and must never contain real credentials.
-Compose intentionally refuses to start until `POSTGRES_PASSWORD` is set.
+Postgres refuses to initialize until `POSTGRES_PASSWORD` is set.
 
 ### 2. Install pinned dependencies
 

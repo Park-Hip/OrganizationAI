@@ -18,13 +18,14 @@ Run these commands from the `backend/` directory.
 
 ### 1. Configure local environment
 
-Copy the example environment file and review the development-only values.
+Copy the example environment file, choose a local Docker password, and use the same URL-safe value in both `POSTGRES_PASSWORD` and `DATABASE_URL`.
 
 ```bash
 cp .env.example .env
 ```
 
 `.env` is git-ignored and must never contain real credentials.
+Compose intentionally refuses to start until `POSTGRES_PASSWORD` is set.
 
 ### 2. Install pinned dependencies
 

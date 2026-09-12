@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-decisioncore}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-decisioncore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Compose}
       POSTGRES_DB: ${POSTGRES_DB:-decisioncore}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -25,7 +25,7 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-decisioncore}:${POSTGRES_PASSWORD:-decisioncore}@db:5432/${POSTGRES_DB:-decisioncore}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-decisioncore}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env before starting Compose}@db:5432/${POSTGRES_DB:-decisioncore}
     ports:
       - "${APP_PORT:-8000}:8000"
 

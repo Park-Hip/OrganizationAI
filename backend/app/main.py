@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 
 from app.api.health import router as health_router
+from app.core.settings import get_settings
 
-PROJECT_NAME = "Decision Core API"
-PROJECT_VERSION = "0.1.0"
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -16,8 +18,16 @@ def create_app() -> FastAPI:
     L0 exposes a health operation only.
     Later layers register routers and application services here.
     """
-    application = FastAPI(title=PROJECT_NAME, version=PROJECT_VERSION)
+    settings = get_settings()
+    logging.basicConfig(level=settings.log_level)
+    application = FastAPI(title=settings.app_name, version=settings.app_version)
     application.include_router(health_router)
+    logger.info(
+        "starting %s %s in environment %s",
+        settings.app_name,
+        settings.app_version,
+        settings.environment,
+    )
     return application
 
 

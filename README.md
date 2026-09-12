@@ -4,7 +4,7 @@ This repository tracks the MLAI Hackathon 2026 submission for Challenge A, The E
 
 The current backend-development scenario is a synthetic campus student-club expense reimbursement referee. The participating club’s real manual workflow and pilot policy are pending validation.
 
-The temporary evaluator completes only synthetic routine cases under the explicitly temporary `TMP-DEV-001` profile and safely escalates incomplete, out-of-policy, or authority-exceeding synthetic cases.
+The temporary evaluator is specified only for synthetic routine cases under the explicitly temporary `TMP-DEV-001` profile and for safely escalating incomplete, out-of-policy, or authority-exceeding synthetic cases.
 
 ## Pre-Sprint Status
 

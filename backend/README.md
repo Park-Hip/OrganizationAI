@@ -53,7 +53,23 @@ Running the check below proves Alembic connects to Postgres with the configured 
 uv run alembic current
 ```
 
-### 5. Run the full quality gate
+### 5. Run the readiness service
+
+With the database running, choose one local development option.
+
+```bash
+uv run uvicorn app.main:app --reload
+```
+
+Or build and run the Compose app service, which starts only when its `app` profile is selected.
+
+```bash
+docker compose --profile app up -d --build
+```
+
+Request `http://localhost:8000/health` to confirm the service reports its process and database status.
+
+### 6. Run the full quality gate
 
 ```bash
 ./scripts/check.sh       # macOS or Linux

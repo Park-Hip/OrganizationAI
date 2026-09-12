@@ -1,0 +1,264 @@
+policy:
+  id: POL-REIMB-CLB
+  version: 1.0.0
+  title: Policy xử lý hồ sơ hoàn ứng câu lạc bộ
+  locale: vi-VN
+  currency: VND
+  reviewed_as_of: '2026-09-12'
+  status: template_pending_parent_approval
+  disclaimer: >-
+    Mẫu nội bộ; đơn vị chủ quản phải xác nhận cấu hình và căn cứ áp dụng.
+    Agent không có quyền giải ngân hoặc ghi đè quy định pháp luật.
+
+legal_sources:
+  - id: LAW-ACCOUNTING-2015
+    layer: mandatory_law
+    title: Luật Kế toán số 88/2015/QH13
+    url: https://vbpl.vn/TW/Pages/vbpq-toanvan.aspx?ItemID=95924
+    application: Chứng từ kế toán, tính đầy đủ, trung thực, lưu trữ và trách nhiệm.
+  - id: CIRCULAR-99-2025
+    layer: accounting_regime
+    title: Thông tư 99/2025/TT-BTC
+    url: https://vbpl.vn/TW/Pages/vbpq-van-ban-goc.aspx?ItemID=187356
+    application: Tham chiếu trường thông tin mẫu 04-TT và 05-TT khi đơn vị chủ quản áp dụng chế độ tương ứng.
+  - id: CIRCULAR-24-2024
+    layer: accounting_regime
+    title: Thông tư 24/2024/TT-BTC
+    url: https://vbpl.vn/TW/Pages/vbpq-luocdo.aspx?ItemID=166774
+    application: Đối chiếu khi đơn vị chủ quản thuộc phạm vi kế toán hành chính, sự nghiệp.
+  - id: DECREE-123-AMENDED
+    layer: mandatory_law
+    title: Quy định hiện hành về hóa đơn, chứng từ (Nghị định 123/2020/NĐ-CP và văn bản sửa đổi)
+    url: https://vanban.chinhphu.vn/?classid=1&docid=218020&orggroupid=2&pageid=27160
+    application: Kiểm tra hóa đơn điện tử/chứng từ khi pháp luật yêu cầu.
+  - id: DECREE-320-2025
+    layer: conditional_tax_rule
+    title: Nghị định 320/2025/NĐ-CP
+    url: https://vanban.chinhphu.vn/?classid=0&docid=216219&pageid=27160
+    application: Điều kiện chứng từ thanh toán không dùng tiền mặt từ 5 triệu đồng khi quy định thuế liên quan áp dụng.
+  - id: LAW-PDP-2025
+    layer: mandatory_law
+    title: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15
+    url: https://congbao.chinhphu.vn/van-ban/luat-so-91-2025-qh15-45578.htm
+    application: Tối thiểu hóa, phân quyền, bảo vệ và lưu trữ dữ liệu cá nhân.
+
+organization_profile:
+  profile_id: DEFAULT-CLB-STUDENT
+  parent_organization: TO_BE_CONFIRMED
+  accounting_regime: TO_BE_CONFIRMED
+  tax_regime_applies: false
+  currency: VND
+  submission_deadline_business_days: 10
+  auto_process_max_vnd: 5000000
+  authority_threshold_operator: greater_than
+  non_cash_evidence_threshold_vnd: 5000000
+  non_cash_rule_is_conditional: true
+  aggregation_keys: [vendor_normalized, transaction_date, purpose_code]
+  allowed_categories: [venue, transport, printing, supplies, communication, approved_food, approved_service]
+  conditional_categories: [gift, honorarium, equipment, late_submission]
+  prohibited_categories: [alcohol, tobacco, illegal_goods, personal_expense]
+  roles:
+    requester: MEMBER
+    preparer: TREASURER_OR_AGENT
+    approver_within_authority: TREASURER
+    approver_over_threshold: CLUB_CHAIR
+    exception_approvers: [CLUB_CHAIR, PARENT_ADVISOR]
+    payment_executor: TREASURER_OR_AUTHORIZED_PAYMENT_SYSTEM
+  no_self_approval: true
+  agent_can_transfer_money: false
+  raw_ocr_retention_days: 30
+  official_record_retention: FOLLOW_PARENT_POLICY_AND_LAW
+
+decision_statuses:
+  AUTO_PROCESS: Đủ điều kiện lập gói thanh toán tự động; không đồng nghĩa đã giải ngân.
+  NEEDS_FACT: Chưa xác định được sự thật; phải hỏi và chờ.
+  OUT_OF_POLICY: Ngoài phạm vi hoặc cần ngoại lệ.
+  AUTHORITY_REQUIRED: Cần người có thẩm quyền quyết định.
+  REJECTED_BY_RULE: Vi phạm quy tắc tuyệt đối trên dữ liệu đã xác minh.
+  PAUSED: Bị dừng bởi người có thẩm quyền hoặc trạng thái hệ thống.
+
+escalation_types:
+  FACT_UNKNOWN: Thiếu hoặc nghi vấn dữ kiện.
+  OUT_OF_POLICY: Khoản chi ngoài Policy hoặc cần ngoại lệ.
+  AUTHORITY_REQUIRED: Vượt thẩm quyền/ngân sách hoặc có xung đột lợi ích.
+
+evaluation_order:
+  - pause_and_data_integrity
+  - duplicate_and_fraud_signals
+  - scope_purpose_category
+  - required_documents
+  - budget_conflict_authority
+  - invoice_payment_tax
+  - calculation_final_decision
+
+rules:
+  - id: RULE-SYS-001
+    priority: 10
+    source: internal_control
+    condition: organization_profile.system_paused == true OR case.paused == true
+    result: {status: PAUSED, terminal: true}
+    testable: true
+  - id: RULE-FACT-001
+    priority: 20
+    source: LAW-ACCOUNTING-2015
+    condition: any required attachment is unreadable OR ocr_confidence < configured minimum
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    guardrail: Never AUTO_PROCESS or REJECTED_BY_RULE while suspicion remains.
+    testable: true
+  - id: RULE-FACT-002
+    priority: 21
+    source: LAW-ACCOUNTING-2015
+    condition: declared totals, line amounts, invoice amounts, payment proof, or advance amount conflict
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    testable: true
+  - id: RULE-FACT-003
+    priority: 22
+    source: internal_control
+    condition: required fact is missing and cannot be deterministically derived from verified evidence
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    testable: true
+  - id: RULE-DUP-001
+    priority: 30
+    source: LAW-ACCOUNTING-2015
+    condition: duplicate match is suspected, incomplete, or disputed
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    testable: true
+  - id: RULE-DUP-002
+    priority: 31
+    source: LAW-ACCOUNTING-2015
+    condition: same verified invoice/document was previously paid and no credit/reversal applies
+    result: {status: REJECTED_BY_RULE, terminal: true}
+    testable: true
+  - id: RULE-SCOPE-001
+    priority: 40
+    source: internal_policy
+    condition: expense has no demonstrable connection to an approved club task/event
+    result: {status: OUT_OF_POLICY, escalation_type: OUT_OF_POLICY, terminal: true}
+    testable: true
+  - id: RULE-SCOPE-002
+    priority: 41
+    source: mandatory_law
+    condition: expense appears illegal or prohibited by applicable law
+    result: {status: OUT_OF_POLICY, escalation_type: OUT_OF_POLICY, terminal: true}
+    constraint: Internal approval cannot legalize the expense.
+    testable: true
+  - id: RULE-CAT-001
+    priority: 42
+    source: internal_policy
+    condition: category is in prohibited_categories and is not illegal per RULE-SCOPE-002
+    result: {status: OUT_OF_POLICY, escalation_type: OUT_OF_POLICY, terminal: true}
+    testable: true
+  - id: RULE-CAT-002
+    priority: 43
+    source: internal_policy
+    condition: category is alcohol
+    result:
+      status: OUT_OF_POLICY
+      escalation_type: OUT_OF_POLICY
+      required_approvers: [CLUB_CHAIR, PARENT_ADVISOR]
+      terminal: true
+    testable: true
+  - id: RULE-CAT-003
+    priority: 44
+    source: internal_policy
+    condition: category is conditional and required prior approval is absent
+    result: {status: AUTHORITY_REQUIRED, escalation_type: AUTHORITY_REQUIRED, terminal: true}
+    testable: true
+  - id: RULE-DOC-001
+    priority: 50
+    source: LAW-ACCOUNTING-2015
+    condition: required dossier component is absent
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    required:
+      common: [requester, purpose, event_or_budget, expense_lines, evidence, payment_proof, reimbursement_account]
+      advance_settlement: [advance_reference, advance_amount]
+      member_paid: [requester_payment_proof]
+    testable: true
+  - id: RULE-DEADLINE-001
+    priority: 55
+    source: internal_policy
+    condition: submission occurs after configured business-day deadline
+    result: {status: AUTHORITY_REQUIRED, escalation_type: AUTHORITY_REQUIRED, terminal: true}
+    testable: true
+  - id: RULE-BUDGET-001
+    priority: 60
+    source: parent_and_internal_policy
+    condition: verified accepted amount exceeds remaining approved budget
+    result: {status: AUTHORITY_REQUIRED, escalation_type: AUTHORITY_REQUIRED, terminal: true}
+    testable: true
+  - id: RULE-CONFLICT-001
+    priority: 61
+    source: internal_control
+    condition: requester is approver OR approver has declared conflict of interest
+    result: {status: AUTHORITY_REQUIRED, escalation_type: AUTHORITY_REQUIRED, terminal: true}
+    action: Route to an independent authorized approver.
+    testable: true
+  - id: RULE-AGG-001
+    priority: 62
+    source: DECREE-320-2025_and_internal_control
+    condition: multiple related lines share configured aggregation keys
+    result: {status: CONTINUE, action: aggregate_before_threshold_checks, terminal: false}
+    testable: true
+  - id: RULE-AUTH-001
+    priority: 63
+    source: internal_policy
+    condition: aggregated verified accepted amount > organization_profile.auto_process_max_vnd
+    result:
+      status: AUTHORITY_REQUIRED
+      escalation_type: AUTHORITY_REQUIRED
+      required_approvers: [CLUB_CHAIR]
+      terminal: true
+    boundary_note: 5,000,000 is within automatic amount boundary; 5,000,001 is above it under the default profile.
+    testable: true
+  - id: RULE-TAX-001
+    priority: 70
+    source: DECREE-320-2025
+    condition: >-
+      tax_regime_applies == true AND aggregated related purchase >=
+      non_cash_evidence_threshold_vnd AND verified non-cash evidence is absent
+    result: {status: NEEDS_FACT, escalation_type: FACT_UNKNOWN, terminal: true}
+    note: Tax-document condition, not an automatic approval threshold.
+    testable: true
+  - id: RULE-CALC-001
+    priority: 80
+    source: internal_policy
+    condition: flow_type == ADVANCE_SETTLEMENT and all line decisions are verified
+    result:
+      accepted_total: sum(accepted line amounts)
+      amount_to_return: max(advance_amount - accepted_total, 0)
+      additional_payment: max(accepted_total - advance_amount, 0)
+      terminal: false
+    testable: true
+  - id: RULE-CALC-002
+    priority: 81
+    source: internal_policy
+    condition: flow_type == MEMBER_PAID and all line decisions are verified
+    result:
+      accepted_total: sum(accepted line amounts)
+      reimbursement_amount: accepted_total
+      terminal: false
+    testable: true
+  - id: RULE-AUTO-001
+    priority: 90
+    source: internal_policy
+    condition: >-
+      no higher-priority rule produced a terminal result; all required facts are verified;
+      amount is within budget and authority; no unresolved flag exists
+    result:
+      status: AUTO_PROCESS
+      terminal: true
+      action: Generate eligible payment packet; do not transfer money.
+    testable: true
+
+escalation_contract:
+  required_fields: [type, addressee_role, related_evidence, known_facts, specific_question, response_format, resume_action]
+  question_quality: Sufficient context for the addressee to answer without reopening the full case.
+
+control_requirements:
+  restrictive_conflict_resolution: true
+  legal_rules_overridable: false
+  pause_authorized_roles: [CLUB_CHAIR, PARENT_ADVISOR]
+  override_requires: [actor_id, actor_role, reason, timestamp, previous_decision_id]
+  undo_requires: [actor_id, reason, timestamp, target_audit_event_id]
+  audit_append_only: true
+  use_synthetic_data_in_public_repository: true

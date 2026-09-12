@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://organizationai.example/schemas/reimbursement.schema.json",
+  "title": "OrganizationAI Reimbursement Evaluation Envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policy_version", "organization_profile", "case", "decision", "audit_events"],
+  "properties": {
+    "policy_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "organization_profile": {"$ref": "#/$defs/OrganizationProfile"},
+    "case": {"$ref": "#/$defs/ReimbursementCase"},
+    "decision": {"$ref": "#/$defs/Decision"},
+    "escalation": {"$ref": "#/$defs/Escalation"},
+    "audit_events": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/AuditEvent"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"decision": {"properties": {"status": {"enum": ["NEEDS_FACT", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]}}, "required": ["status"]}}},
+      "then": {"required": ["escalation"]}
+    }
+  ],
+  "$defs": {
+    "Money": {"type": "integer", "minimum": 0, "description": "Số tiền nguyên VND"},
+    "PersonRef": {
+      "type": "object", "additionalProperties": false,
+      "required": ["person_id", "display_name", "role"],
+      "properties": {
+        "person_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "minLength": 1},
+        "contact": {"type": "string"}
+      }
+    },
+    "OrganizationProfile": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_id", "parent_organization", "accounting_regime", "tax_regime_applies", "currency", "auto_process_max_vnd", "submission_deadline_business_days", "non_cash_evidence_threshold_vnd", "no_self_approval", "agent_can_transfer_money"],
+      "properties": {
+        "profile_id": {"type": "string"},
+        "parent_organization": {"type": "string"},
+        "accounting_regime": {"type": "string"},
+        "tax_regime_applies": {"type": "boolean"},
+        "currency": {"const": "VND"},
+        "auto_process_max_vnd": {"$ref": "#/$defs/Money"},
+        "submission_deadline_business_days": {"type": "integer", "minimum": 0},
+        "non_cash_evidence_threshold_vnd": {"$ref": "#/$defs/Money"},
+        "aggregation_keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "allowed_categories": {"type": "array", "items": {"type": "string"}},
+        "conditional_categories": {"type": "array", "items": {"type": "string"}},
+        "prohibited_categories": {"type": "array", "items": {"type": "string"}},
+        "no_self_approval": {"const": true},
+        "agent_can_transfer_money": {"const": false}
+      }
+    },
+    "Evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["evidence_id", "type", "file_hash", "readable", "verified"],
+      "properties": {
+        "evidence_id": {"type": "string"},
+        "type": {"enum": ["INVOICE", "RECEIPT", "PAYMENT_PROOF", "APPROVAL", "ADVANCE_RECORD", "OTHER"]},
+        "file_hash": {"type": "string", "minLength": 8},
+        "readable": {"type": "boolean"},
+        "verified": {"type": "boolean"},
+        "ocr_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "document_number": {"type": "string"},
+        "document_date": {"type": "string", "format": "date"},
+        "amount_vnd": {"$ref": "#/$defs/Money"},
+        "notes": {"type": "string"}
+      }
+    },
+    "ExpenseItem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["line_id", "vendor", "transaction_date", "purpose_code", "description", "category", "amount_vnd", "payment_method", "evidence_ids", "suspicion_flags"],
+      "properties": {
+        "line_id": {"type": "string"},
+        "vendor": {"type": "string", "minLength": 1},
+        "vendor_tax_id": {"type": "string"},
+        "transaction_date": {"type": "string", "format": "date"},
+        "purpose_code": {"type": "string"},
+        "description": {"type": "string"},
+        "category": {"type": "string"},
+        "amount_vnd": {"$ref": "#/$defs/Money"},
+        "tax_amount_vnd": {"$ref": "#/$defs/Money"},
+        "payment_method": {"enum": ["CASH", "BANK_TRANSFER", "CARD", "E_WALLET", "OTHER"]},
+        "evidence_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "suspicion_flags": {"type": "array", "items": {"type": "string"}},
+        "line_decision": {"enum": ["PENDING", "ACCEPTED", "NOT_ACCEPTED"]}
+      }
+    },
+    "ReimbursementCase": {
+      "type": "object", "additionalProperties": false,
+      "required": ["case_id", "flow_type", "requester", "submitted_at", "task_or_event", "purpose", "budget_code", "approved_budget_vnd", "remaining_budget_vnd", "expense_items", "evidence", "declared_total_vnd", "reimbursement_account", "paused"],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "flow_type": {"enum": ["ADVANCE_SETTLEMENT", "MEMBER_PAID"]},
+        "requester": {"$ref": "#/$defs/PersonRef"},
+        "submitted_at": {"type": "string", "format": "date-time"},
+        "task_or_event": {"type": "string", "minLength": 1},
+        "purpose": {"type": "string", "minLength": 1},
+        "budget_code": {"type": "string"},
+        "approved_budget_vnd": {"$ref": "#/$defs/Money"},
+        "remaining_budget_vnd": {"$ref": "#/$defs/Money"},
+        "prior_approval_ids": {"type": "array", "items": {"type": "string"}},
+        "advance_reference": {"type": "string"},
+        "advance_amount_vnd": {"$ref": "#/$defs/Money"},
+        "expense_items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ExpenseItem"}},
+        "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Evidence"}},
+        "declared_total_vnd": {"$ref": "#/$defs/Money"},
+        "reimbursement_account": {
+          "type": "object", "additionalProperties": false,
+          "required": ["account_name", "bank_name", "masked_account_number"],
+          "properties": {
+            "account_name": {"type": "string"}, "bank_name": {"type": "string"},
+            "masked_account_number": {"type": "string", "description": "Chỉ lưu dạng che bớt trong log/mẫu công khai"}
+          }
+        },
+        "proposed_approver": {"$ref": "#/$defs/PersonRef"},
+        "duplicate_check": {"enum": ["CLEAR", "SUSPECTED", "CONFIRMED_PAID", "NOT_RUN"]},
+        "submitted_business_days_after_end": {"type": "integer", "minimum": 0},
+        "paused": {"type": "boolean"}
+      },
+      "allOf": [
+        {"if": {"properties": {"flow_type": {"const": "ADVANCE_SETTLEMENT"}}}, "then": {"required": ["advance_reference", "advance_amount_vnd"]}}
+      ]
+    },
+    "Escalation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "addressee_role", "related_evidence", "known_facts", "specific_question", "response_format", "resume_action"],
+      "properties": {
+        "type": {"enum": ["FACT_UNKNOWN", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]},
+        "addressee_role": {"type": "string"},
+        "related_evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "known_facts": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "specific_question": {"type": "string", "minLength": 20},
+        "response_format": {"type": "string", "minLength": 5},
+        "resume_action": {"type": "string", "minLength": 10}
+      }
+    },
+    "Decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["decision_id", "status", "accepted_total_vnd", "amount_to_return_vnd", "additional_payment_vnd", "triggered_rule_ids", "evidence_used", "explanation_vi", "created_at"],
+      "properties": {
+        "decision_id": {"type": "string"},
+        "status": {"enum": ["AUTO_PROCESS", "NEEDS_FACT", "OUT_OF_POLICY", "AUTHORITY_REQUIRED", "REJECTED_BY_RULE", "PAUSED"]},
+        "accepted_total_vnd": {"$ref": "#/$defs/Money"},
+        "amount_to_return_vnd": {"$ref": "#/$defs/Money"},
+        "additional_payment_vnd": {"$ref": "#/$defs/Money"},
+        "triggered_rule_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "evidence_used": {"type": "array", "items": {"type": "string"}},
+        "explanation_vi": {"type": "string", "minLength": 20},
+        "created_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "AuditEvent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_id", "timestamp", "actor_id", "actor_type", "policy_version", "event_type", "input_hash", "triggered_rule_ids", "explanation"],
+      "properties": {
+        "event_id": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "actor_id": {"type": "string"},
+        "actor_type": {"enum": ["AGENT", "HUMAN", "SYSTEM"]},
+        "actor_role": {"type": "string"},
+        "policy_version": {"type": "string"},
+        "event_type": {"enum": ["RECEIVED", "VALIDATED", "RULE_TRIGGERED", "DECIDED", "PAUSED", "RESUMED", "OVERRIDDEN", "UNDONE"]},
+        "input_hash": {"type": "string", "minLength": 8},
+        "triggered_rule_ids": {"type": "array", "items": {"type": "string"}},
+        "decision_id": {"type": "string"},
+        "explanation": {"type": "string"},
+        "reason": {"type": "string"},
+        "previous_decision_id": {"type": "string"},
+        "target_audit_event_id": {"type": "string"}
+      }
+    }
+  }
+}

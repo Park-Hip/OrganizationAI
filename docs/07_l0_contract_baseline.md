@@ -100,7 +100,7 @@ Source: `05` and `04` section 7.
 
 | Layer | Owns | Must not claim |
 | --- | --- | --- |
-| L0 | Package, tooling, settings, database plumbing, health, this traceability record | Policy, entities, endpoints, fixture execution |
+| L0 | Package, tooling, settings, database plumbing, health, this traceability record | Policy, entities, temporary case endpoints, fixture execution |
 | L1 | Domain types, pure evaluator, question builders | Persistence or HTTP |
 | L2 | Mappings, first migration, repositories, event-chain integrity | Policy logic or transport schemas |
 | L3 | Request, response, and error schemas | Business decision logic |

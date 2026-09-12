@@ -67,6 +67,7 @@ It stops on the first failure and returns that exit code.
 
 - A clean clone installs and configures from committed, locked dependencies.
 - The typed settings object fails fast when `DATABASE_URL` is absent.
+- FastAPI metadata and startup logging resolve from typed runtime settings.
 - Postgres starts through a reproducible Compose definition with a health check.
 - Alembic is wired to typed settings without a speculative schema.
 - The health endpoint distinguishes a reachable database from an unreachable one without leaking credentials.

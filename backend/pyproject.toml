@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "decision-core-backend"
+name = "organizational-ai-backend"
 version = "0.1.0"
 description = "Temporary synthetic reimbursement referee backend for the OrganizationalAI L0 foundation."
 readme = "README.md"

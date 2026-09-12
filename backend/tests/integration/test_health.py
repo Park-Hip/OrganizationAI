@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal
+import logging
+from typing import Any, Literal, NoReturn
 
 import pytest
 from fastapi.testclient import TestClient
@@ -55,3 +56,21 @@ def test_health_is_degraded_when_database_is_unreachable(
 
     assert response.status_code == 503
     assert response.json() == {"status": "degraded", "database": "unreachable"}
+
+
+def test_health_failure_logs_do_not_expose_database_credentials(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    malformed_database_url = "postgresql://probe:sentinel-password@"
+
+    def _raise_invalid_database_url() -> NoReturn:
+        raise ValueError(f"invalid database URL: {malformed_database_url}")
+
+    monkeypatch.setattr(health_module, "build_engine", _raise_invalid_database_url)
+    caplog.set_level(logging.WARNING, logger=health_module.logger.name)
+
+    response = client.get("/health")
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "degraded", "database": "unreachable"}
+    assert "sentinel-password" not in caplog.text

@@ -31,7 +31,7 @@ def health() -> JSONResponse:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
     except Exception:
-        logger.exception("health probe failed: database unreachable")
+        logger.warning("health probe failed: database unreachable")
         return JSONResponse(
             status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "degraded", "database": "unreachable"},

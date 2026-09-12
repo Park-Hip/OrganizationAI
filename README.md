@@ -6,11 +6,21 @@ Kho lưu trữ này là gói Policy có thể dùng làm nguồn quy tắc cho a
 
 ## Bộ bàn giao
 
-- `Policy_Hoan_Ung_CLB.docx`: quy định nghiệp vụ, biểu mẫu và phụ lục dành cho con người.
-- `policy_rules.yaml`: quy tắc máy đọc được, có mã, nguồn, ưu tiên, điều kiện và kết quả.
-- `reimbursement.schema.json`: JSON Schema cho hồ sơ, cấu hình, kết quả xử lý, chuyển tiếp và audit.
-- `test_cases.json`: 16 ca kiểm thử tổng hợp, không chứa dữ liệu thật.
-- `verify_cases.json`: 5 ca chạy nhanh theo Task A (3 thường quy, 2 chuyển tiếp).
+- [`Policy_Hoan_Ung_CLB.md`](Policy_Hoan_Ung_CLB.md): nguồn nội dung chính, đọc và chỉnh sửa trực tiếp trên GitHub.
+- [`Policy_Hoan_Ung_CLB.docx`](Policy_Hoan_Ung_CLB.docx): bản trình bày để tải xuống, in và ký.
+- [`policy_rules.yaml`](policy_rules.yaml): quy tắc máy đọc được, có mã, nguồn, ưu tiên, điều kiện và kết quả.
+- [`reimbursement.schema.json`](reimbursement.schema.json): JSON Schema cho hồ sơ, cấu hình, kết quả xử lý, chuyển tiếp và audit.
+- [`test_cases.json`](test_cases.json): 16 ca kiểm thử tổng hợp, không chứa dữ liệu thật.
+- [`verify_cases.json`](verify_cases.json): 5 ca chạy nhanh theo Task A (3 thường quy, 2 chuyển tiếp).
+
+## Chỉnh sửa Policy trên GitHub
+
+1. Mở [`Policy_Hoan_Ung_CLB.md`](Policy_Hoan_Ung_CLB.md).
+2. Chọn biểu tượng bút chì **Edit this file**.
+3. Tạo nhánh mới, ghi nội dung thay đổi và mở Pull Request để review.
+4. Sau khi nội dung được duyệt, đồng bộ bản DOCX trước khi phát hành phiên bản mới.
+
+Không chỉnh riêng DOCX rồi bỏ qua Markdown. Nếu hai bản khác nhau, bản Markdown là nguồn nội dung để đối chiếu; bản DOCX chỉ là bản trình bày của cùng phiên bản Policy.
 
 ## Hợp đồng đầu ra
 

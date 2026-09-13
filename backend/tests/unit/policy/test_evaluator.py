@@ -120,8 +120,12 @@ def test_missing_fact_question_is_one_direct_nonblank_question() -> None:
     assert draft.reason.strip()
 
 
-def test_missing_fact_evaluation_is_deterministic() -> None:
-    case = _case(purpose=None)
+@pytest.mark.parametrize(
+    "overrides",
+    [{"purpose": None}, {"requester_role": None}, {"expense": None}],
+)
+def test_missing_fact_evaluation_is_deterministic(overrides: dict[str, object]) -> None:
+    case = _case(**overrides)
 
     first = evaluate_case(case, TMP_DEV_001_PROFILE)
     second = evaluate_case(case, TMP_DEV_001_PROFILE)

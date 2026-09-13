@@ -7,16 +7,21 @@ or payment behavior.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from types import MappingProxyType
+
 from app.domain.enums import DecisionOutcome, TemporaryRuleId
 from app.domain.models import DecisionDraft, NormalizedCase, TemporaryProfile
 from app.policy.normalization import QUESTION_BY_FIELD_PATH
 
 _AUTO_APPROVED_REASON = "Approved under temporary development profile; no payment was made."
 
-_EVALUATOR_ONLY_MISSING_FACT_QUESTIONS: dict[str, str] = {
-    "requester_role": "What is the synthetic requester role for this request?",
-    "expense": "What synthetic expense should this request cover?",
-}
+_EVALUATOR_ONLY_MISSING_FACT_QUESTIONS: Mapping[str, str] = MappingProxyType(
+    {
+        "requester_role": "What is the synthetic requester role for this request?",
+        "expense": "What synthetic expense should this request cover?",
+    }
+)
 
 
 def _is_missing(value: object) -> bool:

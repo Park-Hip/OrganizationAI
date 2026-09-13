@@ -10,20 +10,25 @@ dependency. It never makes a policy decision.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from types import MappingProxyType
+
 from app.domain.models import CaseSubmission, Expense, NormalizedCase
 
 # The single source of truth for the approved first-missing-fact order and its
 # exact repair wording. Dictionary order also defines MISSING_FIELD_PATHS.
-QUESTION_BY_FIELD_PATH: dict[str, str] = {
-    "purpose": "What is the synthetic purpose of this expense?",
-    "expense.category": "Which temporary expense category applies to this synthetic expense?",
-    "expense.description": "What is the synthetic expense description?",
-    "expense.amount_vnd": "What is the positive integer synthetic expense amount in VND?",
-    "expense.expense_date": "What is the synthetic expense date?",
-    "expense.evidence_status": (
-        "Is the declared synthetic expense evidence status PRESENT or NOT_PROVIDED?"
-    ),
-}
+QUESTION_BY_FIELD_PATH: Mapping[str, str] = MappingProxyType(
+    {
+        "purpose": "What is the synthetic purpose of this expense?",
+        "expense.category": "Which temporary expense category applies to this synthetic expense?",
+        "expense.description": "What is the synthetic expense description?",
+        "expense.amount_vnd": "What is the positive integer synthetic expense amount in VND?",
+        "expense.expense_date": "What is the synthetic expense date?",
+        "expense.evidence_status": (
+            "Is the declared synthetic expense evidence status PRESENT or NOT_PROVIDED?"
+        ),
+    }
+)
 
 MISSING_FIELD_PATHS: tuple[str, ...] = tuple(QUESTION_BY_FIELD_PATH)
 

@@ -108,7 +108,7 @@ Every later layer must keep these markers on persisted records and business-oper
 | `workflow_validation_status` | `UNVALIDATED` |
 
 Do not treat `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` as real club practice.
-Every persisted temporary record carries the markers above, and every business response under `/api/temporary/decision-traces` adds an explicit temporary, synthetic, unvalidated notice on top of them.
+Every persisted temporary trace is marked through its immutable case snapshot and the immutable profile snapshot stored with its decision, and every business response under `/api/temporary/decision-traces` adds an explicit temporary, synthetic, unvalidated notice on top of the server-owned markers.
 The operational `/health` readiness response is intentionally exempt and retains its minimal status/database contract.
 
 ## Layer 0 frozen contract

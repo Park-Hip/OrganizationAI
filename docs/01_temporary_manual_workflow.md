@@ -79,7 +79,7 @@ The surrounding service and persistence workflow are implemented by the temporar
 
 ## 7. Completion criteria for this temporary workflow
 
-The evaluator implementation is complete when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
+The temporary decision-history implementation is complete when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
 
 - produces its expected outcome through the same evaluator path;
 - returns the expected rule ID and a nullable question where applicable;

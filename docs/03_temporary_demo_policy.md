@@ -73,6 +73,8 @@ For a routine result, the displayed message must state:
 
 > Approved under temporary development profile; no payment was made.
 
+When the temporary decision-history layer persists a decision, the stored record keeps the same temporary, synthetic, unvalidated provenance markers and the same no-payment wording. A persisted trace is historical synthetic evidence; it never authorizes, initiates, or reports a payment, and it never turns `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` into a real club rule.
+
 ## 6. Fixture coverage
 
 [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) supplies one or more synthetic cases for every rule and for the inclusive `1000` authority boundary.

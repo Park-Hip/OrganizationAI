@@ -171,6 +171,34 @@ def test_row_validation_rejects_missing_fixture_id(
         corpus_reader_tools.validate_rows([{"case_id": "TMP-001"}])
 
 
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [
+        ("profile_id", "OTHER"),
+        ("profile_source", "OTHER"),
+        ("data_class", "OTHER"),
+        ("workflow_validation_status", "OTHER"),
+    ],
+)
+def test_row_validation_rejects_mismatched_profile_provenance(
+    corpus_reader_tools: SimpleNamespace,
+    column: str,
+    value: str,
+) -> None:
+    row = {
+        "fixture_id": "TMP-001",
+        "case_id": "TMP-001",
+        "profile_id": TMP_DEV_001_PROFILE.profile_id,
+        "profile_source": TMP_DEV_001_PROFILE.profile_source.value,
+        "data_class": TMP_DEV_001_PROFILE.data_class.value,
+        "workflow_validation_status": TMP_DEV_001_PROFILE.workflow_validation_status.value,
+    }
+    row[column] = value
+
+    with pytest.raises(ValueError, match=f"invalid {column}"):
+        corpus_reader_tools.validate_rows([row])
+
+
 def test_every_row_converts_to_a_valid_case_submission(
     corpus_rows: list[dict[str, str | None]],
     corpus_reader_tools: SimpleNamespace,

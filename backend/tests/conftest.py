@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 from app.core.settings import get_settings
 from app.domain.enums import EvidenceStatus, TemporaryCategory
 from app.domain.models import CaseSubmission, Expense
+from app.policy.profile import TMP_DEV_001_PROFILE
 
 TEST_DATABASE_URL = "postgresql+psycopg2://decisioncore:decisioncore@localhost:5432/decisioncore"
 
@@ -122,6 +123,18 @@ def _validate_corpus_rows(
         raise ValueError("corpus CSV contains duplicate fixture_id values")
     if len(set(case_ids)) != len(case_ids):
         raise ValueError("corpus CSV contains duplicate case_id values")
+    expected_provenance = {
+        "profile_id": TMP_DEV_001_PROFILE.profile_id,
+        "profile_source": TMP_DEV_001_PROFILE.profile_source.value,
+        "data_class": TMP_DEV_001_PROFILE.data_class.value,
+        "workflow_validation_status": TMP_DEV_001_PROFILE.workflow_validation_status.value,
+    }
+    for index, row in enumerate(rows, start=2):
+        for column, expected_value in expected_provenance.items():
+            if row.get(column) != expected_value:
+                raise ValueError(
+                    f"corpus row {index} has invalid {column}; expected {expected_value!r}"
+                )
     return rows
 
 

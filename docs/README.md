@@ -19,8 +19,8 @@ Until it is, the project uses an explicitly synthetic temporary development work
 | 1 | [01_temporary_manual_workflow.md](01_temporary_manual_workflow.md) | Synthetic end-to-end workflow for `TMP-DEV-001`; not a description of the club's manual process. | Temporary |
 | 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Empty placeholder for the future MVP definition after workflow validation. | Placeholder |
 | 3 | [03_temporary_demo_policy.md](03_temporary_demo_policy.md) | Explicit synthetic decision rules for `TMP-DEV-001`; not a pilot policy. | Temporary |
-| 4 | [04_temporary_system_contract.md](04_temporary_system_contract.md) | Exact temporary records, evaluator boundary, audit behavior, and service operations; not a future public API. | Temporary |
-| 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
+| 4 | [04_temporary_system_contract.md](04_temporary_system_contract.md) | Frozen temporary vocabulary, record shapes, profile, and deferred evaluation boundary; not a future public API. | Temporary |
+| 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six planned synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
 
 ## Retired legacy documents
 
@@ -31,6 +31,6 @@ The former product specification, proposed policy, contract, corpus, research pl
 - Follow [06_git_collaboration_playbook.md](06_git_collaboration_playbook.md) for every branch, commit, and pull request.
 - Use the temporary development chain only to implement/test synthetic backend behavior.
 - Mark every temporary record, result, and business-operation UI/API response with its synthetic/unvalidated provenance. The operational `/health` readiness response is exempt and retains its minimal status/database contract.
-- Do not copy `TEST_ALLOWED`, `TEST_BLOCKED`, `1000`, or temporary `TREASURER` routing into a real club policy.
+- Do not copy `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` into a real club policy.
 - Do not place real personal, financial, receipt, vendor, or bank data in committed artifacts.
 - When a teammate validates the real workflow, replace the temporary chain in a controlled migration: manual workflow → MVP specification → pilot policy → system contract → case corpus.

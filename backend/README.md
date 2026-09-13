@@ -1,7 +1,7 @@
 # OrganizationalAI backend (temporary)
 
 This directory is the temporary backend development foundation for the L0 contract-and-tooling task.
-It contains no policy evaluation, no domain tables, and no public product API yet.
+It contains a frozen domain vocabulary, one temporary profile constant, and no policy evaluation, domain tables, or public product API yet.
 Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
@@ -84,6 +84,7 @@ It stops on the first failure and returns that exit code.
 
 - A clean clone installs and configures from committed, locked dependencies.
 - The typed settings object fails fast when `DATABASE_URL` is absent.
+- The frozen domain vocabulary and sole profile construct and validate their structural rules.
 - FastAPI metadata and startup logging resolve from typed runtime settings.
 - Postgres starts through a reproducible Compose definition with a health check.
 - Alembic is wired to typed settings without a speculative schema.
@@ -100,8 +101,18 @@ Every later layer must keep these markers on persisted records and business-oper
 | `data_class` | `SYNTHETIC` |
 | `workflow_validation_status` | `UNVALIDATED` |
 
-Do not treat `TEST_ALLOWED`, `TEST_BLOCKED`, `1000`, or `TREASURER` as real club practice.
+Do not treat `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` as real club practice.
 The operational `/health` readiness response is intentionally exempt and retains its minimal status/database contract.
+
+## Layer 0 frozen contract
+
+The backend freezes the smallest contract needed before normalization and pure policy evaluation:
+
+- `app/domain` defines the frozen enums and record shapes (`Expense`, `CaseSubmission`, `NormalizedCase`, `TemporaryProfile`, and `DecisionDraft`).
+- `app/policy/profile.py` exports exactly one immutable temporary profile, `TMP_DEV_001_PROFILE`, with provenance, `{TEST_ALLOWED}`, required evidence `PRESENT`, and an inclusive `1000` limit.
+- `tests/contract/` proves the enum values, structural validation, deep immutability, decision-draft combinations, and the import boundary without starting FastAPI or a database.
+
+The contract intentionally has no evaluator, normalizer, API schema, or persistence model yet.
 
 ## Not in L0 scope
 

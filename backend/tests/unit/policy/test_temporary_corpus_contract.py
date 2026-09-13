@@ -1,9 +1,9 @@
 """Contract tests for the L3 test-only temporary corpus reader.
 
 Proves the canonical temporary document loads, carries the sole temporary
-profile, and converts into the frozen Layer 0 CaseSubmission shape. This is
-the reader-first slice. The decision matrix that depends on the L2 evaluator
-is a separate PR after L1 and L2 land.
+profile, and converts into the frozen Layer 0 CaseSubmission shape.
+The L3 decision matrix separately evaluates those parsed submissions through
+the real Layer 1 and Layer 2 composition.
 """
 
 from __future__ import annotations

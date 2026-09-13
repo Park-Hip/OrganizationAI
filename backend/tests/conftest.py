@@ -1,4 +1,4 @@
-"""Shared pytest fixtures and the L3 test-only temporary corpus reader."""
+"""Shared pytest fixtures for the temporary corpus and L3 evaluation tests."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 # ---------------------------------------------------------------------------
-# Temporary corpus reader (L3 reader-first scope).
+# Temporary corpus reader for the L3 test suite.
 #
 # Reads the canonical temporary corpus as test-only data and converts each row
 # into the frozen Layer 0 CaseSubmission shape. Production code never imports

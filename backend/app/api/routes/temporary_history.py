@@ -12,7 +12,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from app.api.schemas.temporary_history import TraceReadModel
+from app.api.schemas.temporary_history import ErrorResponse, TraceReadModel
 from app.application.temporary_history import read_trace, submit_trace
 from app.domain.models import CaseSubmission
 from app.persistence.db import get_session
@@ -25,8 +25,14 @@ router = APIRouter(prefix="/api/temporary/decision-traces", tags=["temporary-dec
     response_model=TraceReadModel,
     status_code=status.HTTP_201_CREATED,
     responses={
-        status.HTTP_409_CONFLICT: {"description": "Duplicate synthetic case ID"},
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Invalid temporary case"},
+        status.HTTP_409_CONFLICT: {
+            "model": ErrorResponse,
+            "description": "Duplicate synthetic case ID",
+        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "model": ErrorResponse,
+            "description": "Invalid temporary case",
+        },
     },
 )
 def create_trace(
@@ -43,7 +49,12 @@ def create_trace(
 @router.get(
     "/{trace_id}",
     response_model=TraceReadModel,
-    responses={status.HTTP_404_NOT_FOUND: {"description": "Unknown trace ID"}},
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "model": ErrorResponse,
+            "description": "Unknown trace ID",
+        }
+    },
 )
 def retrieve_trace(
     trace_id: UUID,

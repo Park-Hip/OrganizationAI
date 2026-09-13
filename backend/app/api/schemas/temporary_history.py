@@ -67,3 +67,4 @@ class ErrorResponse(BaseModel):
 
     error: ErrorBody
     temporary_notice: str
+    provenance: ProvenanceReadModel

@@ -11,12 +11,13 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api.schemas.temporary_history import ErrorBody, ErrorResponse
+from app.api.schemas.temporary_history import ErrorBody, ErrorResponse, ProvenanceReadModel
 from app.application.temporary_history import (
     TEMPORARY_NOTICE,
     TraceAlreadyRecordedError,
     TraceNotFoundError,
 )
+from app.policy.profile import TMP_DEV_001_PROFILE
 
 _INPUT_INVALID_CODE = "INPUT_INVALID"
 _CASE_ID_ALREADY_RECORDED_CODE = "CASE_ID_ALREADY_RECORDED"
@@ -32,6 +33,12 @@ def _response(
     body = ErrorResponse(
         error=ErrorBody(code=code, message=message, details=details),
         temporary_notice=TEMPORARY_NOTICE,
+        provenance=ProvenanceReadModel(
+            profile_id=TMP_DEV_001_PROFILE.profile_id,
+            profile_source=TMP_DEV_001_PROFILE.profile_source.value,
+            data_class=TMP_DEV_001_PROFILE.data_class.value,
+            workflow_validation_status=TMP_DEV_001_PROFILE.workflow_validation_status.value,
+        ),
     )
     return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
 

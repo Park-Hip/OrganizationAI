@@ -21,6 +21,12 @@ from app.domain.models import CaseSubmission
 
 _ENDPOINT = "/api/temporary/decision-traces"
 _TRACE_ID = UUID("00000000-0000-0000-0000-000000000001")
+_EXPECTED_PROVENANCE = {
+    "profile_id": "TMP-DEV-001",
+    "profile_source": "TEMPORARY_DEVELOPMENT",
+    "data_class": "SYNTHETIC",
+    "workflow_validation_status": "UNVALIDATED",
+}
 
 
 def _valid_body(case_id: str = "TMP-API-01") -> dict[str, object]:
@@ -113,6 +119,7 @@ def test_get_unknown_trace_returns_404_envelope(
     payload = response.json()
     assert payload["error"]["code"] == "TRACE_NOT_FOUND"
     assert payload["temporary_notice"] == service_module.TEMPORARY_NOTICE
+    assert payload["provenance"] == _EXPECTED_PROVENANCE
 
 
 def test_post_duplicate_case_returns_409_envelope(
@@ -129,6 +136,7 @@ def test_post_duplicate_case_returns_409_envelope(
     payload = response.json()
     assert payload["error"]["code"] == "CASE_ID_ALREADY_RECORDED"
     assert payload["temporary_notice"] == service_module.TEMPORARY_NOTICE
+    assert payload["provenance"] == _EXPECTED_PROVENANCE
 
 
 def _with_extra_field(field: str, value: object, *, in_expense: bool = False) -> dict[str, object]:
@@ -164,3 +172,4 @@ def test_unapproved_fields_are_rejected_with_422(
     assert payload["error"]["code"] == "INPUT_INVALID"
     assert payload["error"]["message"] == "The submitted temporary case is invalid."
     assert payload["temporary_notice"] == service_module.TEMPORARY_NOTICE
+    assert payload["provenance"] == _EXPECTED_PROVENANCE

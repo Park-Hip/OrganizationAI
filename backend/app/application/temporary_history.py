@@ -180,9 +180,6 @@ def submit_trace(
     normalizer and evaluator are invoked exactly once; the completed history is
     written in one transaction so a failure leaves no partial record.
     """
-    if repository.case_id_exists(session, submission.case_id):
-        raise TraceAlreadyRecordedError(submission.case_id)
-
     profile = TMP_DEV_001_PROFILE
     now = clock()
     trace_id = id_factory()
@@ -223,6 +220,8 @@ def submit_trace(
 
     try:
         with session.begin():
+            if repository.case_id_exists(session, submission.case_id):
+                raise TraceAlreadyRecordedError(submission.case_id)
             repository.add_trace(session, case_row, decision_row, events)
             session.flush()
     except IntegrityError as error:

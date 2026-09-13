@@ -76,10 +76,10 @@ class CaseSubmission(BaseModel):
 
 
 class NormalizedCase(CaseSubmission):
-    """The explicit future output of normalization.
+    """The explicit output of Layer 1 normalization.
 
-    Layer 0 defines the type only. It intentionally has the same fields as the
-    transport shape until normalization rules are designed.
+    It intentionally retains the transport shape while Layer 1 canonicalizes
+    only its approved decision-bearing text fields.
     """
 
 

@@ -6,7 +6,7 @@
 
 **Depends on:** [03_temporary_demo_policy.md](03_temporary_demo_policy.md).
 
-**Purpose:** Define the frozen Layer 0 vocabulary, record shapes, temporary profile, and deterministic evaluation boundary for `TMP-DEV-001`.
+**Purpose:** Define the frozen Layer 0 vocabulary, record shapes, and temporary profile, plus the Layer 1 normalization contract and deterministic evaluation boundary for `TMP-DEV-001`.
 
 **Not a claim:** This is not the future club workflow, pilot policy, public API, or production data contract.
 
@@ -146,7 +146,7 @@ normalized temporary case + immutable TMP-DEV-001 profile snapshot
 ```
 
 The future evaluator has no HTTP, database, LLM, clock, file, payment, or external-service dependency.
-Layer 0 freezes only the input and output types and the profile constant.
+Layer 0 freezes the input and output types and profile constant, and Layer 1 supplies normalization and repair-question preparation.
 
 ### 6.2 Deferred rule precedence
 
@@ -166,6 +166,9 @@ The Layer 1 normalizer is a pure function from `CaseSubmission` to `NormalizedCa
 It copies every field and applies one change: a `purpose` or `expense.description` value with no non-whitespace content becomes null.
 A nonblank string is preserved exactly, including surrounding whitespace.
 `case_id` and `requester_role` are never altered, because no temporary policy rule decides from them.
+
+The required-fact scope is `purpose` plus every `Expense` business field.
+`requester_role` is optional supplemental context, not a required fact.
 
 The first-missing-fact order is fixed:
 

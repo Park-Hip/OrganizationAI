@@ -119,12 +119,11 @@ The contract intentionally has no evaluator, API schema, or persistence model ye
 
 Layer 1 adds one pure policy module, `app/policy/normalization.py`, with no HTTP, database, clock, file, LLM, settings, or profile dependency.
 
-- `normalize_case` copies a validated `CaseSubmission` into a `NormalizedCase`, converting only whitespace-only `purpose` and `expense.description` values to absent while preserving all nonblank text exactly.
-- `first_missing_field` returns the first absent field path in the fixed order `purpose`, `expense.category`, `expense.description`, `expense.amount_vnd`, `expense.expense_date`, `expense.evidence_status`, or no value when the case is complete.
-- `question_for_field_path` returns the exact synthetic-safe repair question for any approved field path.
+- `normalize_case` copies a validated `CaseSubmission` into a `NormalizedCase`, converting only whitespace-only decision-bearing text to absent while preserving every nonblank value exactly.
+- `first_missing_field` identifies the first absent required business fact.
+- `question_for_field_path` returns the approved synthetic-safe repair question for that field path.
 
-An absent `expense` yields `expense.category` as the first missing field.
-A declared `NOT_PROVIDED` evidence status is not a structurally missing fact; its rule-specific wording belongs to the future evaluator with `TMP-EVD-01`.
+The authoritative required-fact, normalization, field-priority, and repair-question contract is [docs/04_temporary_system_contract.md](../docs/04_temporary_system_contract.md).
 
 ## Not in L0 or L1 scope
 

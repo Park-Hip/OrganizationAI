@@ -14,6 +14,16 @@ Read `docs/README.md` first. Treat the documents it links as the source of truth
 - GitHub Issues and the GitHub Project hold shared task scope, ownership, acceptance criteria, and status.
 - Files named `docs/NN_*.md` are durable base documentation. Add, renumber, replace, or substantially restructure a numbered document only after explicit team consideration; do not use numbered documents for drafts or short-lived plans.
 
+## Pull-request clarity
+
+Pull-request descriptions must be understandable without private `.local/` files, prior chat, or project-specific vocabulary.
+
+- Use every section of `.github/pull_request_template.md`; do not replace its headings with tool-generated headings.
+- Start with a plain-language Summary and Context: state the problem, why the change is needed now, and the outcome it enables.
+- Define or link project-specific terms on first use, including Layer 0, profile, provenance, and temporary-policy identifiers.
+- List the key changed file paths or path groups and explain why each changed.
+- Link the governing GitHub Issue and use `Closes #<issue-number>` for normal pull requests.
+
 ## Git
 
 When using Git, follow `docs/06_git_collaboration_playbook.md`.

@@ -9,20 +9,13 @@ from __future__ import annotations
 
 from app.domain.enums import DecisionOutcome, TemporaryRuleId
 from app.domain.models import DecisionDraft, NormalizedCase, TemporaryProfile
+from app.policy.normalization import QUESTION_BY_FIELD_PATH
 
 _AUTO_APPROVED_REASON = "Approved under temporary development profile; no payment was made."
 
-_MISSING_FACT_QUESTIONS: dict[str, str] = {
-    "purpose": "What is the synthetic purpose of this expense?",
+_EVALUATOR_ONLY_MISSING_FACT_QUESTIONS: dict[str, str] = {
     "requester_role": "What is the synthetic requester role for this request?",
     "expense": "What synthetic expense should this request cover?",
-    "expense.category": "Which temporary expense category applies to this synthetic expense?",
-    "expense.description": "What is the synthetic expense description?",
-    "expense.amount_vnd": "What is the positive integer synthetic expense amount in VND?",
-    "expense.expense_date": "What is the synthetic expense date?",
-    "expense.evidence_status": (
-        "Is the declared synthetic expense evidence status PRESENT or NOT_PROVIDED?"
-    ),
 }
 
 
@@ -67,7 +60,11 @@ def _missing_fact_draft(profile: TemporaryProfile, field_path: str) -> DecisionD
             f"Required synthetic business fact '{field_path}' is missing under "
             f"temporary development profile {profile.profile_id}."
         ),
-        question=_MISSING_FACT_QUESTIONS[field_path],
+        question=(
+            QUESTION_BY_FIELD_PATH[field_path]
+            if field_path in QUESTION_BY_FIELD_PATH
+            else _EVALUATOR_ONLY_MISSING_FACT_QUESTIONS[field_path]
+        ),
         profile_id=profile.profile_id,
     )
 

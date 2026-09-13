@@ -20,6 +20,7 @@ from app.domain.enums import (
 )
 from app.domain.models import NormalizedCase, TemporaryProfile
 from app.policy.evaluator import evaluate_case
+from app.policy.normalization import QUESTION_BY_FIELD_PATH
 from app.policy.profile import TMP_DEV_001_PROFILE
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
@@ -118,6 +119,15 @@ def test_missing_fact_question_is_one_direct_nonblank_question() -> None:
     assert draft.question is not None
     assert draft.question.endswith("?")
     assert draft.reason.strip()
+
+
+def test_canonical_missing_fact_question_is_reused(monkeypatch: pytest.MonkeyPatch) -> None:
+    canonical_question = "What is the updated synthetic purpose of this expense?"
+    monkeypatch.setitem(QUESTION_BY_FIELD_PATH, "purpose", canonical_question)
+
+    draft = evaluate_case(_case(purpose=None), TMP_DEV_001_PROFILE)
+
+    assert draft.question == canonical_question
 
 
 def test_missing_fact_precedes_out_of_policy_category() -> None:

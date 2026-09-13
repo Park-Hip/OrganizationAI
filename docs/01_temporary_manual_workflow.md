@@ -22,7 +22,7 @@ Do not silently relabel this temporary workflow as observed evidence.
 
 ## 1. One-sentence workflow
 
-> A synthetic test requester will submit one synthetic self-paid expense case when the deferred service exists; Layer 0 freezes the facts and result shape that its future evaluator will use.
+> A synthetic test requester will submit one synthetic self-paid expense case when the deferred service exists; Layers 0 through 2 define its facts, normalization, and deterministic decision result.
 
 ## 2. Scope boundary
 
@@ -42,7 +42,7 @@ It creates no field on the client transport shape.
 | Role | Temporary action | Not a claim about reality |
 | --- | --- | --- |
 | `TEST_REQUESTER` | Will send a synthetic case object through a future temporary service. | Not a real club member or defined requester role. |
-| `SYSTEM` | Will validate and evaluate `TMP-DEV-001` when the deferred evaluator layer is built. | Does not authorize payment or exercise human discretion. |
+| `SYSTEM` | Will validate transport and apply the Layer 2 `TMP-DEV-001` evaluator when a service is built. | Does not authorize payment or exercise human discretion. |
 
 Layer 0 models no human-handling role.
 `OUT_OF_POLICY` and `AUTHORITY_EXCEEDED` only identify cases that need later human handling; no authority is claimed.
@@ -60,31 +60,26 @@ The test requester will submit the one-line case shape defined in the system con
 
 A client cannot select or alter provenance, and the transport shape rejects any profile or provenance field.
 
-## 5. Deferred temporary workflow steps
+## 5. Temporary workflow steps
 
 | Step | Actor | Action | Output / handoff |
 | --- | --- | --- | --- |
 | 1. Prepare fixture | `TEST_REQUESTER` | Will select or create a synthetic one-line self-paid case. | Transport-valid case object. |
 | 2. Submit | `TEST_REQUESTER` to service | Will send the case to a future submit-and-evaluate operation. | Accepted synthetic case. |
 | 3. Validate transport | `SYSTEM` | A future adapter will reject malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
-| 4. Evaluate policy | `SYSTEM` | A future evaluator will apply `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
+| 4. Evaluate policy | `SYSTEM` | The Layer 2 evaluator applies `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
 | 5. Return explanation | `SYSTEM` to `TEST_REQUESTER` | A future service will return outcome, applied rule, reason, and a question when the outcome is `MISSING_FACT`. | Inspectable result; no payment action. |
 
 Persistence of the case, decision, and append-only audit history is defined by a later persistence layer, not by this Layer 0 contract.
 
-## 6. Deferred temporary decision paths
+## 6. Temporary decision paths
 
-| Condition | Result | System response |
-| --- | --- | --- |
-| A business fact is absent, null, or blank in an otherwise transport-valid case. | `MISSING_FACT` | The future evaluator will ask for the first missing fact. |
-| Category is not in the profile allow-list, for example `TEST_BLOCKED`. | `OUT_OF_POLICY` | The future evaluator will cite `TMP-CAT-01` and flag the case for later human handling. |
-| Eligible case has a declared evidence status other than `PRESENT`. | `MISSING_FACT` | The future evaluator will ask for expense proof/reference. |
-| Complete allowed and evidenced case has amount above the temporary `1000` constant. | `AUTHORITY_EXCEEDED` | The future evaluator will cite `TMP-AUT-02` and flag the case for later human handling. |
-| None of the preceding conditions applies. | `AUTO_APPROVED` | The future evaluator will state: "Approved under temporary development profile; no payment was made." |
+The Layer 2 evaluator returns one of the four temporary outcomes in the first-applicable order defined by the [temporary policy](03_temporary_demo_policy.md) and [system contract](04_temporary_system_contract.md).
+The surrounding service and persistence workflow remains deferred.
 
 ## 7. Completion criteria for this temporary workflow
 
-The workflow is ready for the evaluator layer when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
+The evaluator implementation is complete when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
 
 - produces its expected outcome through the same evaluator path;
 - returns the expected rule ID and a nullable question where applicable;

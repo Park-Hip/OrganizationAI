@@ -35,6 +35,31 @@ assert (
 )
 assert TMP_DEV_001_PROFILE.allowed_categories == frozenset({TemporaryCategory.TEST_ALLOWED})
 assert TMP_DEV_001_PROFILE.required_evidence_status is EvidenceStatus.PRESENT
+
+from app.domain.models import CaseSubmission
+from app.policy import normalization as l1
+
+assert l1.MISSING_FIELD_PATHS == (
+    "purpose",
+    "expense.category",
+    "expense.description",
+    "expense.amount_vnd",
+    "expense.expense_date",
+    "expense.evidence_status",
+)
+
+blank_case = CaseSubmission(
+    case_id="PROBE-01",
+    submitted_at="2026-01-15T09:00:00Z",
+    requester_role=None,
+    purpose="   ",
+    expense=None,
+)
+assert l1.normalize_case(blank_case).purpose is None
+assert l1.first_missing_field(l1.normalize_case(blank_case)) == "purpose"
+
+for module_name in ("fastapi", "sqlalchemy", "app.core.settings", "app.persistence"):
+    assert module_name not in sys.modules, f"{module_name} was imported by Layer 1"
 print("import-boundary-ok")
 """
 

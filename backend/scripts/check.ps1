@@ -1,4 +1,4 @@
-# L0 quality gate: stops on the first failing check and returns its exit code.
+# Temporary backend quality gate: stops on the first failing check and returns its exit code.
 # The database reachability smoke test is documented separately in backend/README.md.
 $ErrorActionPreference = "Stop"
 

@@ -15,13 +15,6 @@ Link the related issue(s) and explain the background or motivation for this chan
 
 List the key files or paths touched by this PR, or paste a short diff summary so reviewers know where to focus.
 
-## Policy and Audit Impact
-
-- [ ] This change does not alter policy behavior.
-- [ ] This change updates a versioned policy or rule ID.
-- [ ] This change updates audit events, pause, approval, rejection, or undo behavior.
-- [ ] This change changes none of the above.
-
 ## Verification
 
 Steps to reproduce and verify this change:
@@ -34,7 +27,3 @@ Steps to reproduce and verify this change:
 - [ ] The deployed production path was checked when applicable.
 - [ ] New or changed cases are documented.
 - [ ] Screenshots or Verify output are attached when useful.
-
-## Evidence Link
-
-Add the project item, test output, or other evidence location.

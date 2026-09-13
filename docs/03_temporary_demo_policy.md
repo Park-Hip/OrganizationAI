@@ -4,7 +4,7 @@
 
 **Status:** Temporary development policy - non-canonical.
 
-**Purpose:** Supply explicit, synthetic business rules so the evaluator, demo fixtures, and later persistence behavior can be built before a participating club validates its real workflow and policy.
+**Purpose:** Supply explicit, synthetic business rules for the evaluator, demo fixtures, and temporary decision-history behavior before a participating club validates its real workflow and policy.
 
 **Not a claim:** This is not a club policy, financial procedure, institutional rule, user-research finding, or public-demo evidence.
 

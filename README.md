@@ -24,7 +24,8 @@ It defines our branch, commit, and pull-request rules.
 
 The backend foundation lives in [backend/](backend/) and is temporary, synthetic, and unvalidated.
 Read [backend/README.md](backend/README.md) for clean-clone prerequisites, setup, and quality commands.
-The backend provides pure Layer 1 normalization and Layer 2 policy evaluation, but does not yet persist cases, expose a public product API, or make any real workflow claim.
+The backend provides pure Layer 1 normalization and Layer 2 policy evaluation, plus a limited temporary API that persists immutable synthetic decision traces.
+It does not make any real workflow claim.
 Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 
 ## Sprint Integrity

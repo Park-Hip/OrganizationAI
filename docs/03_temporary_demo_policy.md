@@ -4,7 +4,7 @@
 
 **Status:** Temporary development policy - non-canonical.
 
-**Purpose:** Supply explicit, synthetic business rules so the evaluator, demo fixtures, and later persistence behavior can be built before a participating club validates its real workflow and policy.
+**Purpose:** Supply explicit, synthetic business rules for the evaluator, demo fixtures, and temporary decision-history behavior before a participating club validates its real workflow and policy.
 
 **Not a claim:** This is not a club policy, financial procedure, institutional rule, user-research finding, or public-demo evidence.
 
@@ -72,6 +72,8 @@ The evaluator applies the first applicable rule:
 For a routine result, the displayed message must state:
 
 > Approved under temporary development profile; no payment was made.
+
+When the temporary decision-history layer persists a decision, the stored record keeps the same temporary, synthetic, unvalidated provenance markers and the same no-payment wording. A persisted trace is historical synthetic evidence; it never authorizes, initiates, or reports a payment, and it never turns `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` into a real club rule.
 
 ## 6. Fixture coverage
 

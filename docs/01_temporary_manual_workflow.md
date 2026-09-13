@@ -22,7 +22,7 @@ Do not silently relabel this temporary workflow as observed evidence.
 
 ## 1. One-sentence workflow
 
-> A synthetic test requester will submit one synthetic self-paid expense case when the deferred service exists; Layers 0 through 2 define its facts, normalization, and deterministic decision result.
+> A synthetic test requester submits one synthetic self-paid expense case through the temporary decision-history API; Layers 0 through 2 define its facts, normalization, and deterministic decision result, and the temporary persistence layer stores the complete synthetic history.
 
 ## 2. Scope boundary
 
@@ -32,7 +32,7 @@ Do not silently relabel this temporary workflow as observed evidence.
 | One expense line | Multi-line claims and aggregation |
 | Declared evidence status of `PRESENT` or `NOT_PROVIDED` | File upload, OCR, invoice verification, or receipt storage |
 | Deterministic evaluation | LLM decision-making or inferred facts |
-| Case, decision, and append-only audit persistence as a later layer | Payment, bank transfer, accounting, tax, or advance reconciliation |
+| Immutable case, decision, and append-only audit persistence with stored-only retrieval | Payment, bank transfer, accounting, tax, or advance reconciliation |
 
 The temporary policy's self-paid scope is stated in [03_temporary_demo_policy.md](03_temporary_demo_policy.md).
 It creates no field on the client transport shape.
@@ -41,15 +41,15 @@ It creates no field on the client transport shape.
 
 | Role | Temporary action | Not a claim about reality |
 | --- | --- | --- |
-| `TEST_REQUESTER` | Will send a synthetic case object through a future temporary service. | Not a real club member or defined requester role. |
-| `SYSTEM` | Will validate transport and apply the Layer 2 `TMP-DEV-001` evaluator when a service is built. | Does not authorize payment or exercise human discretion. |
+| `TEST_REQUESTER` | Sends a synthetic case object to the temporary decision-history API. | Not a real club member or defined requester role. |
+| `SYSTEM` | Validates transport, applies the Layer 2 `TMP-DEV-001` evaluator, and writes an immutable trace plus ordered `SYSTEM` audit events. | Does not authorize payment or exercise human discretion. |
 
 Layer 0 models no human-handling role.
 `OUT_OF_POLICY` and `AUTHORITY_EXCEEDED` only identify cases that need later human handling; no authority is claimed.
 
 ## 4. Temporary input
 
-The test requester will submit the one-line case shape defined in the system contract when a transport layer is built:
+The test requester submits the one-line case shape defined in the system contract through the temporary decision-history API:
 
 | Group | Declared fields | Why they exist in the temporary workflow |
 | --- | --- | --- |
@@ -64,27 +64,27 @@ A client cannot select or alter provenance, and the transport shape rejects any 
 
 | Step | Actor | Action | Output / handoff |
 | --- | --- | --- | --- |
-| 1. Prepare fixture | `TEST_REQUESTER` | Will select or create a synthetic one-line self-paid case. | Transport-valid case object. |
-| 2. Submit | `TEST_REQUESTER` to service | Will send the case to a future submit-and-evaluate operation. | Accepted synthetic case. |
-| 3. Validate transport | `SYSTEM` | A future adapter will reject malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
+| 1. Prepare fixture | `TEST_REQUESTER` | Selects or creates a synthetic one-line self-paid case. | Transport-valid case object. |
+| 2. Submit | `TEST_REQUESTER` to service | Sends the case to `POST /api/temporary/decision-traces`. | Accepted synthetic case. |
+| 3. Validate transport | `SYSTEM` | The API adapter rejects malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
 | 4. Evaluate policy | `SYSTEM` | The Layer 2 evaluator applies `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
-| 5. Return explanation | `SYSTEM` to `TEST_REQUESTER` | A future service will return outcome, applied rule, reason, and a question when the outcome is `MISSING_FACT`. | Inspectable result; no payment action. |
+| 5. Record and return | `SYSTEM` to `TEST_REQUESTER` | One transaction writes the immutable case snapshot, decision snapshot, and three ordered `SYSTEM` audit events, then returns outcome, rule, reason, and a question when the outcome is `MISSING_FACT`. | Stored, retrievable trace; no payment action. |
 
-Persistence of the case, decision, and append-only audit history is defined by a later persistence layer, not by this Layer 0 contract.
+The service writes the complete synthetic history in one transaction and stores it as immutable snapshots and append-only audit events. `GET /api/temporary/decision-traces/{trace_id}` returns the stored history without reevaluating the decision. No human-control operation exists in this workflow.
 
 ## 6. Temporary decision paths
 
 The Layer 2 evaluator returns one of the four temporary outcomes in the first-applicable order defined by the [temporary policy](03_temporary_demo_policy.md) and [system contract](04_temporary_system_contract.md).
-The surrounding service and persistence workflow remains deferred.
+The surrounding service and persistence workflow are implemented by the temporary decision-history layer; human-control operations remain deferred.
 
 ## 7. Completion criteria for this temporary workflow
 
-The evaluator implementation is complete when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
+The temporary decision-history implementation is complete when the team can show that every fixture in [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
 
 - produces its expected outcome through the same evaluator path;
 - returns the expected rule ID and a nullable question where applicable;
 - retains the temporary, synthetic, unvalidated provenance markers; and
-- leaves persistence and audit ordering to the persistence layer.
+- stores an immutable snapshot and an ordered, append-only audit event chain through the temporary persistence layer.
 
 ## 8. Handoff to the real workflow
 

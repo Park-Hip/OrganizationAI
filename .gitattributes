@@ -1,0 +1,5 @@
+# Line-ending normalization policy.
+# Store LF in the repository. Keep Python files LF in the working tree too, so
+# editors, ruff, and review tooling never produce mixed line endings in a file.
+* text=auto
+*.py text eol=lf

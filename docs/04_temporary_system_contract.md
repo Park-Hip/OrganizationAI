@@ -207,13 +207,31 @@ Its rule-specific repair wording belongs to the evaluator with `TMP-EVD-01`.
 | Blank `case_id`, invalid timestamp, unknown enum token, boolean or non-integer amount, or zero or negative amount | Rejected by the record shape validator before the evaluator runs. |
 | A business field that is null or blank in an otherwise transport-valid case | Allowed by the record shape; the evaluator returns `MISSING_FACT`. |
 
-`INPUT_INVALID` is a future adapter error label, not a `DecisionOutcome` and not part of the real-policy outcome vocabulary.
+`INPUT_INVALID` is the temporary API's structural-error code, not a `DecisionOutcome` and not part of the real-policy outcome vocabulary.
+
+## Temporary decision-history persistence contract (approved)
+
+The temporary backend adds an immutable, append-only persistence layer for synthetic `TMP-DEV-001` traces. It does not change the Layer 0 record shapes or the evaluator, and it does not implement any human control.
+
+**Identifiers and times.** The server generates the canonical `trace_id` (UUID) and all database identifiers. The server generates `recorded_at`/`decided_at` in UTC; the client-supplied `submitted_at` is retained only as part of the validated input snapshot. Clients cannot supply profile, provenance, activity, or real-data fields.
+
+**Stored trace.** One submitted case produces exactly one `trace_id` linking:
+
+- one immutable case snapshot: validated input JSON, normalized facts JSON, server `recorded_at`, and `profile_id`/`profile_source`/`data_class`/`workflow_validation_status`;
+- one immutable decision snapshot: `profile_id`, the frozen profile snapshot, outcome, applied rule ID, reason, nullable question, and server `decided_at`;
+- an append-only event chain in order `CASE_RECEIVED` → `CASE_NORMALIZED` → `DECISION_RECORDED`, each with a positive, per-trace-unique `sequence_number`, an optional `previous_event_id`, and technical actor `SYSTEM`.
+
+**Integrity.** A record inserts case, decision, and events in one transaction; a failing write leaves no partial record. `UPDATE` or `DELETE` is prevented by `BEFORE UPDATE OR DELETE` triggers, so normal paths only append and read. Duplicate client `case_id` values are rejected with a known conflict and preserve the first trace. The client `case_id` is unique among stored traces.
+
+**Retrieval.** `GET /api/temporary/decision-traces/{trace_id}` returns the stored input, facts used, profile, decision, explanation, question, server times, provenance, and ordered events from snapshots only. Retrieval never calls the normalizer or evaluator, so a stored decision never changes under future code.
+
+**API and provenance.** `POST /api/temporary/decision-traces` creates and returns one trace; `GET .../{trace_id}` reads one trace. Structural errors return `INPUT_INVALID` (422), duplicates return `CASE_ID_ALREADY_RECORDED` (409), and unknown traces return `TRACE_NOT_FOUND` (404). Every business response carries a temporary, synthetic, unvalidated notice and the server-owned provenance markers. The operational `/health` response is unchanged and exempt.
+
+**Reset.** Demo records are synthetic-only. A local/demo reset recreates the database and reruns the migration; no reset, list, bulk, or mutation operation is exposed through the API.
 
 ## 8. Explicitly deferred
 
-- Case, decision, and audit persistence.
-- API endpoints and response serialization.
-- Human queues, approval actions, and real authority claims.
+- Human decision points: pause, approve, reject, override, undo, reviewer queues, login, and role-based access control.
 - Evidence upload, storage, OCR, receipt inspection, or verification.
 - Real workflow migration.
 

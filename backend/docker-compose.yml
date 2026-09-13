@@ -29,5 +29,23 @@ services:
     ports:
       - "${APP_PORT:-8000}:8000"
 
+  test-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-decisioncore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_TEST_DB:-decisioncore_test}
+    ports:
+      - "${POSTGRES_TEST_PORT:-5433}:5432"
+    volumes:
+      - decisioncore_test_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-decisioncore} -d $${POSTGRES_DB:-decisioncore_test}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
 volumes:
   decisioncore_pgdata:
+  decisioncore_test_pgdata:

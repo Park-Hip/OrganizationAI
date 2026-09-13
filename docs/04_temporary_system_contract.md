@@ -6,7 +6,7 @@
 
 **Depends on:** [03_temporary_demo_policy.md](03_temporary_demo_policy.md).
 
-**Purpose:** Define the frozen Layer 0 vocabulary, record shapes, and temporary profile, plus the Layer 1 normalization contract and deterministic evaluation boundary for `TMP-DEV-001`.
+**Purpose:** Define the frozen Layer 0 vocabulary, record shapes, and temporary profile, plus the Layer 1 normalization and Layer 2 deterministic evaluation contracts for `TMP-DEV-001`.
 
 **Not a claim:** This is not the future club workflow, pilot policy, public API, or production data contract.
 
@@ -16,10 +16,10 @@
 
 1. The temporary policy's synthetic self-paid scope adds no field to `CaseSubmission`.
 2. Each case has exactly one optional expense object.
-3. Every `Expense` business field can be null so a later evaluator can return a safe `MISSING_FACT` decision.
+3. Every `Expense` business field can be null so the evaluator can return a safe `MISSING_FACT` decision.
 4. A client cannot submit profile or provenance fields.
-5. The future evaluator will be deterministic: the same normalized case and immutable profile snapshot produce the same decision.
-6. A future decision never makes, authorizes, or reports a payment.
+5. The evaluator is deterministic: the same normalized case and immutable profile snapshot produce the same decision.
+6. A decision never makes, authorizes, or reports a payment.
 7. Persistence and append-only audit records are defined by the persistence layer, not by Layer 0.
 
 ## 2. Frozen enums
@@ -31,7 +31,7 @@ All enums subclass `str` and `Enum` for stable serialization.
 | `TemporaryCategory` | `TEST_ALLOWED`, `TEST_BLOCKED` | Temporary category labels, none of which is a real category. |
 | `EvidenceStatus` | `PRESENT`, `NOT_PROVIDED` | A requester declaration about evidence, not a receipt check. |
 | `DecisionOutcome` | `AUTO_APPROVED`, `MISSING_FACT`, `OUT_OF_POLICY`, `AUTHORITY_EXCEEDED` | The four temporary decision results. |
-| `TemporaryRuleId` | `TMP-REQ-01`, `TMP-CAT-01`, `TMP-EVD-01`, `TMP-AUT-01`, `TMP-AUT-02` | Typed evidence for the single rule a future evaluator applies. |
+| `TemporaryRuleId` | `TMP-REQ-01`, `TMP-CAT-01`, `TMP-EVD-01`, `TMP-AUT-01`, `TMP-AUT-02` | Typed evidence for the single first-applicable rule the evaluator applies. |
 | `ProfileSource` | `TEMPORARY_DEVELOPMENT` | Temporary provenance marker. |
 | `DataClass` | `SYNTHETIC` | Temporary provenance marker. |
 | `WorkflowValidationStatus` | `UNVALIDATED` | Temporary provenance marker. |
@@ -134,56 +134,63 @@ It does not mean OrganizationalAI received, read, authenticated, or verified pro
 
 `NOT_PROVIDED` means the requester declares that evidence is absent.
 
-A null `evidence_status` is a missing business fact that a later evaluator can ask to repair.
+A null `evidence_status` is a missing business fact that the evaluator can ask to repair.
 
 ## 6. Evaluation contract
 
 ### 6.1 Pure evaluator boundary
 
 ```text
-normalized temporary case + immutable TMP-DEV-001 profile snapshot
+normalized temporary case + immutable temporary profile snapshot
     -> deterministic DecisionDraft
 ```
 
-The future evaluator has no HTTP, database, LLM, clock, file, payment, or external-service dependency.
-Layer 0 freezes the input and output types and profile constant, and Layer 1 supplies normalization and repair-question preparation.
+`app.policy.evaluator.evaluate_case` accepts a `NormalizedCase` and an injected immutable `TemporaryProfile` and returns a `DecisionDraft`.
+It has no HTTP, database, LLM, clock, file, payment, or external-service dependency.
+Layer 0 freezes the input and output types and profile constant, Layer 1 supplies normalization and shared repair questions, and Layer 2 evaluates policy.
 
-### 6.2 Deferred rule precedence
+### 6.2 Rule precedence
 
 | Priority | Check | Result |
 | --- | --- | --- |
-| 1 | Routine-decision fact is null, blank, or otherwise absent. | `MISSING_FACT` using `TMP-REQ-01`. Ask for the first missing fact. |
+| 1 | `purpose`, `requester_role`, the `expense` object, or an expense business field is null, blank, or otherwise absent. | `MISSING_FACT` using `TMP-REQ-01`. Ask for the first missing fact. |
 | 2 | Category is not in the allow-list. | `OUT_OF_POLICY` using `TMP-CAT-01`. Flag for later human handling. |
-| 3 | `expense.evidence_status` is not `PRESENT`. | `MISSING_FACT` using `TMP-EVD-01`. Ask for expense proof/reference. |
-| 4 | Allowed, evidenced amount is greater than `1000`. | `AUTHORITY_EXCEEDED` using `TMP-AUT-02`. Flag for later human handling. |
+| 3 | `expense.evidence_status` does not equal the profile's required evidence status. | `MISSING_FACT` using `TMP-EVD-01`. Ask for expense proof/reference. |
+| 4 | Allowed, evidenced amount is greater than the profile's automatic-approval limit. | `AUTHORITY_EXCEEDED` using `TMP-AUT-02`. Flag for later human handling. |
 | 5 | No previous condition applies. | `AUTO_APPROVED` using `TMP-AUT-01`. |
 
-The first-missing-fact field order and repair wording are defined in section 6.3 and implemented by the Layer 1 normalizer.
+`TMP-DEV-001` requires `PRESENT` evidence and uses the inclusive `1000` automatic-approval limit defined in section 4.
+The first-missing-fact field order and repair wording are defined in section 6.3.
 
-### 6.3 Layer 1 normalization and repair questions
+### 6.3 Normalization and repair questions
 
 The Layer 1 normalizer is a pure function from `CaseSubmission` to `NormalizedCase`.
 It copies every field and applies one change: a `purpose` or `expense.description` value with no non-whitespace content becomes null.
 A nonblank string is preserved exactly, including surrounding whitespace.
-`case_id` and `requester_role` are never altered, because no temporary policy rule decides from them.
+`case_id` and `requester_role` are never altered.
+The evaluator independently treats a null or whitespace-only `requester_role` as missing.
 
-The required-fact scope is `purpose` plus every `Expense` business field.
-`requester_role` is optional supplemental context, not a required fact.
+The required-fact scope is `purpose`, `requester_role`, the `expense` object, and every `Expense` business field.
 
 The first-missing-fact order is fixed:
 
 1. `purpose`
-2. `expense.category`
-3. `expense.description`
-4. `expense.amount_vnd`
-5. `expense.expense_date`
-6. `expense.evidence_status`
+2. `requester_role`
+3. `expense`
+4. `expense.category`
+5. `expense.description`
+6. `expense.amount_vnd`
+7. `expense.expense_date`
+8. `expense.evidence_status`
 
-When `expense` is null, the first missing fact is `expense.category`.
+The six purpose and expense-field questions are owned by the Layer 1 canonical mapping.
+Layer 2 owns the requester-role and expense-object questions.
 
 Each field has one exact repair question:
 
 - `purpose`: the question `What is the synthetic purpose of this expense?`
+- `requester_role`: the question `What is the synthetic requester role for this request?`
+- `expense`: the question `What synthetic expense should this request cover?`
 - `expense.category`: the question `Which temporary expense category applies to this synthetic expense?`
 - `expense.description`: the question `What is the synthetic expense description?`
 - `expense.amount_vnd`: the question `What is the positive integer synthetic expense amount in VND?`
@@ -197,16 +204,13 @@ Its rule-specific repair wording belongs to the evaluator with `TMP-EVD-01`.
 
 | Condition | Layer 0 behavior |
 | --- | --- |
-| Blank `case_id`, invalid timestamp, unknown enum token, boolean or non-integer amount, or zero or negative amount | Rejected by the record shape validator before a future evaluator runs. |
-| A business field that is null or blank in an otherwise transport-valid case | Allowed by the record shape; the future evaluator returns `MISSING_FACT`. |
+| Blank `case_id`, invalid timestamp, unknown enum token, boolean or non-integer amount, or zero or negative amount | Rejected by the record shape validator before the evaluator runs. |
+| A business field that is null or blank in an otherwise transport-valid case | Allowed by the record shape; the evaluator returns `MISSING_FACT`. |
 
 `INPUT_INVALID` is a future adapter error label, not a `DecisionOutcome` and not part of the real-policy outcome vocabulary.
 
 ## 8. Explicitly deferred
 
-- Rule-specific question wording and any separate question identifier, such as the `TMP-EVD-01` evidence-referral prompt.
-- Policy evaluation and rule precedence implementation.
-- Fixture loading and evaluator matrix tests.
 - Case, decision, and audit persistence.
 - API endpoints and response serialization.
 - Human queues, approval actions, and real authority claims.

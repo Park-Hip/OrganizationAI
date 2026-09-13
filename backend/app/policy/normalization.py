@@ -2,7 +2,7 @@
 
 This module turns a validated ``CaseSubmission`` into a canonical
 ``NormalizedCase`` and provides the deterministic first-missing-field and
-repair-question helpers a future evaluator will consume.
+repair-question helpers used by the Layer 2 evaluator.
 
 It is pure: no HTTP, database, clock, file, LLM, settings, or profile
 dependency. It never makes a policy decision.
@@ -15,8 +15,8 @@ from types import MappingProxyType
 
 from app.domain.models import CaseSubmission, Expense, NormalizedCase
 
-# The single source of truth for the approved first-missing-fact order and its
-# exact repair wording. Dictionary order also defines MISSING_FIELD_PATHS.
+# The canonical Layer 1 mapping for shared purpose and expense-field repair
+# wording. Dictionary order also defines MISSING_FIELD_PATHS.
 QUESTION_BY_FIELD_PATH: Mapping[str, str] = MappingProxyType(
     {
         "purpose": "What is the synthetic purpose of this expense?",
@@ -83,7 +83,7 @@ def _field_value(case: NormalizedCase, path: str) -> object | None:
 
 
 def first_missing_field(case: NormalizedCase) -> str | None:
-    """Return the first absent field path in the approved order, or None."""
+    """Return the first absent field path in the Layer 1 canonical order, or None."""
     for path in MISSING_FIELD_PATHS:
         if _field_value(case, path) is None:
             return path

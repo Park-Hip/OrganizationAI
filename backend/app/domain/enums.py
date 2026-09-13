@@ -37,7 +37,7 @@ class DecisionOutcome(str, Enum):
 
 
 class TemporaryRuleId(str, Enum):
-    """Typed evidence for the single rule a future evaluator applies."""
+    """Typed evidence for the single first-applicable rule the evaluator applies."""
 
     TMP_REQ_01 = "TMP-REQ-01"
     TMP_CAT_01 = "TMP-CAT-01"

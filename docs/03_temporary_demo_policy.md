@@ -27,7 +27,7 @@ It must never be described as a real club approval policy.
 
 ## 2. Scope
 
-The future evaluator under this policy will evaluate one synthetic, self-paid, post-spend request with one expense line.
+The evaluator under this policy evaluates one synthetic, self-paid, post-spend request with one expense line.
 
 This scope creates no client transport field.
 
@@ -37,7 +37,7 @@ This policy does not define payment, bank transfer, accounting, tax, receipt aut
 
 | Rule ID | Condition | Policy result |
 | --- | --- | --- |
-| `TMP-REQ-01` | A required business fact is absent. | `MISSING_FACT`; ask for the first missing fact. |
+| `TMP-REQ-01` | A required business fact - purpose, requester role, expense object, or expense field - is absent. | `MISSING_FACT`; ask for the first missing fact. |
 | `TMP-CAT-01` | Category is not in the temporary allow-list. | `OUT_OF_POLICY`; flag the case for later human handling. |
 | `TMP-EVD-01` | An otherwise eligible case has `expense.evidence_status` other than `PRESENT`. | `MISSING_FACT`; ask for expense proof/reference. |
 | `TMP-AUT-01` | An eligible, evidenced case has amount at or below `auto_approve_limit_vnd`. | `AUTO_APPROVED`. |
@@ -61,7 +61,7 @@ They must not be copied into a real policy.
 
 ## 5. Evaluation order
 
-When implemented, the evaluator will apply the first applicable rule:
+The evaluator applies the first applicable rule:
 
 1. Required business fact missing - `MISSING_FACT` (`TMP-REQ-01`).
 2. Category not in the allow-list - `OUT_OF_POLICY` (`TMP-CAT-01`).

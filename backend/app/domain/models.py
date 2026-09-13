@@ -25,7 +25,7 @@ from app.domain.enums import (
 class Expense(BaseModel):
     """One optional expense line whose business fields can all be null.
 
-    A null field is a missing business fact that a later evaluator can ask to
+    A null field is a missing business fact that the evaluator can ask to
     repair. An invalid transport value is rejected before that evaluator runs.
     """
 
@@ -84,7 +84,7 @@ class NormalizedCase(CaseSubmission):
 
 
 class TemporaryProfile(BaseModel):
-    """Immutable server-owned snapshot used by a future evaluator."""
+    """Immutable server-owned snapshot used by the evaluator."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 

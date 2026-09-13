@@ -206,7 +206,7 @@ Its rule-specific repair wording belongs to the evaluator with `TMP-EVD-01`.
 
 - Rule-specific question wording and any separate question identifier, such as the `TMP-EVD-01` evidence-referral prompt.
 - Policy evaluation and rule precedence implementation.
-- Fixture loading and evaluator matrix tests.
+- Evaluator matrix tests.
 - Case, decision, and audit persistence.
 - API endpoints and response serialization.
 - Human queues, approval actions, and real authority claims.

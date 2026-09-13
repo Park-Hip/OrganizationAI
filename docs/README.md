@@ -20,7 +20,7 @@ Until it is, the project uses an explicitly synthetic temporary development work
 | 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Empty placeholder for the future MVP definition after workflow validation. | Placeholder |
 | 3 | [03_temporary_demo_policy.md](03_temporary_demo_policy.md) | Explicit synthetic decision rules for `TMP-DEV-001`; not a pilot policy. | Temporary |
 | 4 | [04_temporary_system_contract.md](04_temporary_system_contract.md) | Frozen temporary vocabulary, record shapes, profile, Layer 1 normalization, and deferred evaluation boundary; not a future public API. | Temporary |
-| 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six planned synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
+| 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
 
 ## Retired legacy documents
 

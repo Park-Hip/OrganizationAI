@@ -8,6 +8,7 @@ financial or authority record.
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -68,5 +69,5 @@ def register_exception_handlers(application: FastAPI) -> None:
             422,
             _INPUT_INVALID_CODE,
             "The submitted temporary case is invalid.",
-            details=list(exc.errors()),
+            details=jsonable_encoder(exc.errors()),
         )

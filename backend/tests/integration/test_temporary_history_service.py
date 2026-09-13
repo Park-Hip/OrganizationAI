@@ -139,6 +139,14 @@ def test_event_ordering_holds_when_server_timestamps_are_equal(session: Session)
     assert [event.sequence_number for event in result.events] == [1, 2, 3]
 
 
+def test_submit_trace_accepts_a_case_id_longer_than_255_characters(session: Session) -> None:
+    case_id = "TMP-" + "x" * 252
+
+    result = submit_trace(_routine_submission(case_id), session, clock=_fixed_clock)
+
+    assert result.submission["case_id"] == case_id
+
+
 def test_service_uses_the_real_normalization_and_evaluation_path(session: Session) -> None:
     result = submit_trace(_incomplete_submission(), session, clock=_fixed_clock)
 

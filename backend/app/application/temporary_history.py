@@ -224,15 +224,14 @@ def submit_trace(
                 raise TraceAlreadyRecordedError(submission.case_id)
             repository.add_trace(session, case_row, decision_row, events)
             session.flush()
+            stored = repository.find_trace(session, trace_id)
+            if stored is None:
+                raise TraceNotFoundError(trace_id)
+            return _to_trace_model(stored)
     except IntegrityError as error:
         if _is_duplicate_case_id(error):
             raise TraceAlreadyRecordedError(submission.case_id) from error
         raise
-
-    stored = repository.find_trace(session, trace_id)
-    if stored is None:
-        raise TraceNotFoundError(trace_id)
-    return _to_trace_model(stored)
 
 
 def read_trace(

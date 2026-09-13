@@ -47,7 +47,7 @@ class TemporaryCaseSnapshot(Base):
     __table_args__ = (UniqueConstraint("case_id", name="uq_temporary_case_snapshots_case_id"),)
 
     trace_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
-    case_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    case_id: Mapped[str] = mapped_column(Text, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     submission_snapshot: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     normalized_snapshot: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)

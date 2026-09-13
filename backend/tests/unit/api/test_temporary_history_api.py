@@ -150,6 +150,12 @@ def _with_extra_field(field: str, value: object, *, in_expense: bool = False) ->
     return body
 
 
+def _with_case_id(case_id: str) -> dict[str, object]:
+    body = _valid_body()
+    body["case_id"] = case_id
+    return body
+
+
 @pytest.mark.parametrize(
     "body",
     [
@@ -160,6 +166,7 @@ def _with_extra_field(field: str, value: object, *, in_expense: bool = False) ->
         _with_extra_field("vendor", "Synthetic Vendor"),
         _with_extra_field("bank_account", "123456789"),
         _with_extra_field("receipt_file", "not-supported.png", in_expense=True),
+        _with_case_id(" "),
     ],
 )
 def test_unapproved_fields_are_rejected_with_422(

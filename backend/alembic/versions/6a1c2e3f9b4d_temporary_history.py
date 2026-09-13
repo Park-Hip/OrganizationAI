@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.create_table(
         "temporary_case_snapshots",
         sa.Column("trace_id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("case_id", sa.String(length=255), nullable=False),
+        sa.Column("case_id", sa.Text, nullable=False),
         sa.Column("recorded_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("submission_snapshot", postgresql.JSONB, nullable=False),
         sa.Column("normalized_snapshot", postgresql.JSONB, nullable=False),

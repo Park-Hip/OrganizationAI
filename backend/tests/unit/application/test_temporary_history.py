@@ -29,16 +29,24 @@ _FIXED_NOW = datetime(2030, 1, 1, 12, 0, 0, tzinfo=UTC)
 
 
 class _FakeTransaction:
+    def __init__(self, session: _FakeSession) -> None:
+        self._session = session
+
     def __enter__(self) -> _FakeTransaction:
+        self._session.transaction_active = True
         return self
 
     def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> Literal[False]:
+        self._session.transaction_active = False
         return False
 
 
 class _FakeSession:
+    def __init__(self) -> None:
+        self.transaction_active = False
+
     def begin(self) -> _FakeTransaction:
-        return _FakeTransaction()
+        return _FakeTransaction(self)
 
     def flush(self) -> None:
         return None
@@ -51,6 +59,7 @@ class _RecordingRepository(TemporaryHistoryRepository):
         self.events: list[TemporaryAuditEvent] = []
         self.existing_case_ids: set[str] = set()
         self.returned_trace: TemporaryCaseSnapshot | None = None
+        self.find_transaction_states: list[bool] = []
 
     def case_id_exists(self, session: Session, case_id: str) -> bool:
         return case_id in self.existing_case_ids
@@ -70,6 +79,8 @@ class _RecordingRepository(TemporaryHistoryRepository):
         case.events = events
 
     def find_trace(self, session: Session, trace_id: UUID) -> TemporaryCaseSnapshot | None:
+        fake_session = cast(_FakeSession, session)
+        self.find_transaction_states.append(fake_session.transaction_active)
         return self.returned_trace
 
 
@@ -141,7 +152,8 @@ def _event(sequence: int, action: str, previous: UUID | None) -> TemporaryAuditE
 
 def test_submit_trace_composes_policy_once_and_records_ordered_events() -> None:
     repository = _RecordingRepository()
-    fake_session = cast(Session, _FakeSession())
+    session = _FakeSession()
+    fake_session = cast(Session, session)
 
     result = submit_trace(_routine_submission(), fake_session, repository=repository)
 
@@ -160,6 +172,8 @@ def test_submit_trace_composes_policy_once_and_records_ordered_events() -> None:
     assert repository.events[0].previous_event_id is None
     assert repository.events[1].previous_event_id == repository.events[0].event_id
     assert repository.events[2].previous_event_id == repository.events[1].event_id
+    assert repository.find_transaction_states == [True]
+    assert not session.transaction_active
 
 
 def test_submit_trace_preserves_the_real_decision_for_missing_facts() -> None:

@@ -1,12 +1,12 @@
-# Temporary System Contract v0.1
+# Temporary System Contract v0.2
 
 ## Document control
 
-**Status:** Temporary development contract — non-canonical.
+**Status:** Temporary development contract - non-canonical.
 
 **Depends on:** [03_temporary_demo_policy.md](03_temporary_demo_policy.md).
 
-**Purpose:** Define the exact temporary backend records, evaluator boundary, persistence behavior, and service operations needed to implement `TMP-DEV-001`.
+**Purpose:** Define the frozen Layer 0 vocabulary, record shapes, temporary profile, and deterministic evaluation boundary for `TMP-DEV-001`.
 
 **Not a claim:** This is not the future club workflow, pilot policy, public API, or production data contract.
 
@@ -14,53 +14,101 @@
 
 ## 1. Invariants
 
-1. Every persisted record is synthetic and carries `profile_id = TMP-DEV-001`, `profile_source = TEMPORARY_DEVELOPMENT`, `data_class = SYNTHETIC`, and `workflow_validation_status = UNVALIDATED`.
-2. The service stamps provenance; a client cannot select a different profile.
-3. The only claim route is `SELF_PAID`.
-4. Each case has exactly one expense object.
+1. The only supported claim route is `SELF_PAID`; the client payload has no route field.
+2. Each case has exactly one optional expense object.
+3. Every `Expense` business field can be null so a later evaluator can return a safe `MISSING_FACT` decision.
+4. A client cannot submit profile or provenance fields.
 5. The evaluator is deterministic: the same normalized case and immutable profile snapshot produce the same decision.
-6. A decision does not make, authorize, or report a payment.
-7. Audit events are append-only. A stored snapshot is never updated in place.
+6. A decision never makes, authorizes, or reports a payment.
+7. Persistence and append-only audit records are defined by the persistence layer, not by Layer 0.
 
-## 2. Type definitions
+## 2. Frozen enums
 
-### 2.1 Primitive enums
+All enums subclass `str` and `Enum` for stable serialization.
 
-| Type | Permitted values |
-| --- | --- |
-| `ClaimRoute` | `SELF_PAID` |
-| `EvidenceProofStatus` | `PRESENT`, `NOT_PROVIDED`, `UNREADABLE`, `AMBIGUOUS` |
-| `TemporaryCategory` | `TEST_ALLOWED`, `TEST_BLOCKED` |
-| `DecisionOutcome` | `AUTO_APPROVED`, `MISSING_FACT`, `OUT_OF_POLICY`, `AUTHORITY_EXCEEDED` |
-| `ReviewerRoute` | `TREASURER` |
-| `CaseState` | `SUBMITTED`, `EVALUATED` |
-| `AuditAction` | `SUBMITTED`, `EVALUATED` |
-| `AuditActor` | `TEST_CLIENT`, `SYSTEM` |
+| Enum | Permitted values | Purpose |
+| --- | --- | --- |
+| `TemporaryCategory` | `TEST_ALLOWED`, `TEST_BLOCKED` | Temporary category labels, none of which is a real category. |
+| `EvidenceStatus` | `PRESENT`, `NOT_PROVIDED` | A requester declaration about evidence, not a receipt check. |
+| `DecisionOutcome` | `AUTO_APPROVED`, `MISSING_FACT`, `OUT_OF_POLICY`, `AUTHORITY_EXCEEDED` | The four temporary decision results. |
+| `TemporaryRuleId` | `TMP-REQ-01`, `TMP-CAT-01`, `TMP-EVD-01`, `TMP-AUT-01`, `TMP-AUT-02` | Typed evidence for the single rule a future evaluator applies. |
+| `ProfileSource` | `TEMPORARY_DEVELOPMENT` | Temporary provenance marker. |
+| `DataClass` | `SYNTHETIC` | Temporary provenance marker. |
+| `WorkflowValidationStatus` | `UNVALIDATED` | Temporary provenance marker. |
 
-### 2.2 Case submission
+There are no `ClaimRoute`, `ReviewerRoute`, `CaseState`, `AuditAction`, `AuditActor`, or `QuestionKey` enums in Layer 0.
 
-The transport contract allows a business field to be absent/null so the evaluator can return a safe `MISSING_FACT` decision. A malformed transport value is handled separately in section 5.
+## 3. Frozen record shapes
 
-| Field | Type | Required by transport | Required for a routine decision | Notes |
-| --- | --- | --- | --- | --- |
-| `case_id` | non-empty string | Yes | Yes | Synthetic unique ID supplied by the test client. |
-| `submitted_at` | valid timestamp | Yes | Yes | Client assertion of submission time; server also records event time. |
-| `requester_role` | non-empty string or null | Yes | Yes | Synthetic role label only. |
-| `claim_route` | `SELF_PAID` or null | Yes | Yes | Any other valid enum is intentionally unsupported. |
-| `activity_ref` | non-empty string or null | Yes | Yes | Synthetic activity reference. |
-| `purpose` | non-empty string or null | Yes | Yes | Stated purpose. |
-| `expense` | object or null | Yes | Yes | Exactly one object in v0.1. |
-| `expense.category` | `TemporaryCategory` or null | Yes when expense exists | Yes | Profile applies category rule. |
-| `expense.description` | non-empty string or null | Yes when expense exists | Yes | Stated expense description. |
-| `expense.amount_vnd` | positive integer or null | Yes when expense exists | Yes | Synthetic integer only; no real spend. |
-| `expense.expense_date` | valid date or null | Yes when expense exists | Yes | Expense fact. |
-| `expense_proof_status` | `EvidenceProofStatus` or null | Yes | Yes | Declared status; no file analysis occurs. |
+All shapes are frozen Pydantic v2 models with `extra="forbid"`.
+No global string stripping is enabled, because whitespace-only business text must remain available for later missing-fact normalization.
 
-The client must not submit profile/provenance fields. The service adds them when the case is accepted.
+### 3.1 `Expense`
 
-### 2.3 Temporary profile snapshot
+One optional expense line.
 
-A case evaluation uses an immutable copy of this profile:
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `category` | `TemporaryCategory` or null | Expense category. |
+| `description` | string or null | Stated expense description. |
+| `amount_vnd` | positive integer or null | Synthetic integer amount only. |
+| `expense_date` | valid date or null | Expense fact. |
+| `evidence_status` | `EvidenceStatus` or null | Declared evidence state; null is a missing business fact. |
+
+A null field is a missing business fact for the evaluator, not a transport error.
+
+### 3.2 `CaseSubmission`
+
+The client transport shape.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `case_id` | non-blank string | Synthetic unique ID supplied by the test client. |
+| `submitted_at` | valid timestamp | Client assertion of submission time. |
+| `requester_role` | string or null | Synthetic role label only. |
+| `purpose` | string or null | Stated purpose. |
+| `expense` | `Expense` or null | Exactly one optional expense object. |
+
+The shape has no profile, provenance, claim route, activity reference, or reviewer route.
+
+### 3.3 `NormalizedCase`
+
+Same fields as `CaseSubmission`.
+Layer 0 creates the type only; normalization rules are deferred.
+
+### 3.4 `TemporaryProfile`
+
+An immutable server-owned snapshot.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `profile_id` | non-blank string | Profile identifier. |
+| `profile_source` | `ProfileSource` | Provenance marker. |
+| `data_class` | `DataClass` | Provenance marker. |
+| `workflow_validation_status` | `WorkflowValidationStatus` | Provenance marker. |
+| `allowed_categories` | `frozenset[TemporaryCategory]` | The only categories in policy. |
+| `required_evidence_status` | `EvidenceStatus` | The evidence state the policy requires. |
+| `auto_approve_limit_vnd` | positive integer | Inclusive automatic approval limit. |
+
+There is no `blocked_categories`, `authority_exceeded_route`, or reviewer route field.
+
+### 3.5 `DecisionDraft`
+
+A pure decision result.
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `outcome` | `DecisionOutcome` | Result of deterministic evaluation. |
+| `applied_rule_id` | `TemporaryRuleId` | The single first-applicable rule. |
+| `reason` | non-blank string | Short, user-readable explanation. |
+| `question` | string or null | Nullable question text only; no question key. |
+| `profile_id` | non-blank string | Links the result to the profile that produced it. |
+
+The shape has no route, question key, decision ID, timestamp, audit state, or persistence snapshot.
+
+## 4. Temporary profile constant
+
+`backend/app/policy/profile.py` exports exactly one immutable constant, `TMP_DEV_001_PROFILE`.
 
 | Field | Value |
 | --- | --- |
@@ -68,124 +116,77 @@ A case evaluation uses an immutable copy of this profile:
 | `profile_source` | `TEMPORARY_DEVELOPMENT` |
 | `data_class` | `SYNTHETIC` |
 | `workflow_validation_status` | `UNVALIDATED` |
-| `allowed_categories` | `TEST_ALLOWED` |
-| `blocked_categories` | `TEST_BLOCKED` |
+| `allowed_categories` | `{TEST_ALLOWED}` |
 | `required_evidence_status` | `PRESENT` |
-| `dev_auto_limit_vnd` | `1000` |
-| `authority_exceeded_route` | `TREASURER` |
+| `auto_approve_limit_vnd` | `1000` |
 
-### 2.4 Decision
+No client request, environment variable, fixture, or query parameter can select or alter this profile.
 
-| Field | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `decision_id` | server-generated unique ID | Yes | Identifies one evaluator result. |
-| `case_id` | string | Yes | Links decision to immutable case snapshot. |
-| `outcome` | `DecisionOutcome` | Yes | Result of deterministic evaluation. |
-| `applied_rule_ids` | non-empty list of strings | Yes | `TMP-REQ-01`, `TMP-CAT-01`, `TMP-EVD-01`, `TMP-AUT-01`, or `TMP-AUT-02` as applicable. |
-| `reason` | non-empty string | Yes | Short, user-readable explanation. |
-| `question` | non-empty string or null | Conditional | Required for `MISSING_FACT`, `OUT_OF_POLICY`, and `AUTHORITY_EXCEEDED`; null for routine result. |
-| `reviewer_route` | `TREASURER` or null | Conditional | Required for `OUT_OF_POLICY` and `AUTHORITY_EXCEEDED`; null otherwise. |
-| `decision_state` | `EVALUATED` | Yes | Temporary terminal state. |
-| `created_at` | server timestamp | Yes | Time of evaluation. |
-| `profile_snapshot` | immutable profile object | Yes | Proves temporary behavior and provenance. |
+## 5. Evidence declaration
 
-For `AUTO_APPROVED`, the reason/output must include: **“Approved under temporary development profile; no payment was made.”**
+`evidence_status` lives on the `Expense` object.
 
-### 2.5 Append-only audit event
+There is no file field, upload endpoint, object storage, receipt parser, OCR component, checksum, image inspection, or evidence review state.
 
-| Field | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `event_id` | server-generated unique ID | Yes | Audit identifier. |
-| `case_id` | string | Yes | Related synthetic case. |
-| `action` | `SUBMITTED` or `EVALUATED` | Yes | Event type. |
-| `actor` | `TEST_CLIENT` or `SYSTEM` | Yes | `TEST_CLIENT` submits; `SYSTEM` evaluates. |
-| `created_at` | server timestamp | Yes | Authoritative event order. |
-| `prior_event_id` | string or null | Yes | Null for first event; points to prior event afterward. |
-| `case_snapshot` | immutable case object | Yes | Full normalized submission as used at that event. |
-| `profile_snapshot` | immutable profile object | Yes | Required on every event. |
-| `decision_snapshot` | decision object or null | Conditional | Present only on `EVALUATED`. |
+`PRESENT` means the requester declares that evidence exists.
+It does not mean OrganizationalAI received, read, authenticated, or verified proof.
 
-## 3. Evaluation contract
+`NOT_PROVIDED` means the requester declares that evidence is absent.
 
-### 3.1 Pure evaluator boundary
+A null `evidence_status` is a missing business fact that a later evaluator can ask to repair.
+
+## 6. Evaluation contract
+
+### 6.1 Pure evaluator boundary
 
 ```text
 normalized temporary case + immutable TMP-DEV-001 profile snapshot
-    → deterministic Decision
+    -> deterministic DecisionDraft
 ```
 
-The pure evaluator has no HTTP, database, LLM, clock, file, payment, or external-service dependency. The adapter creates IDs/timestamps and persists returned records.
+The future evaluator has no HTTP, database, LLM, clock, file, payment, or external-service dependency.
+Layer 0 freezes only the input and output types and the profile constant.
 
-### 3.2 Rule precedence
+### 6.2 Rule precedence
 
 | Priority | Check | Result |
 | --- | --- | --- |
-| 1 | Routine-decision fact is null, blank, or otherwise absent. | `MISSING_FACT` using `TMP-REQ-01`. Ask for the first missing fact in documented field order. |
-| 2 | Category is `TEST_BLOCKED` or not in the temporary profile. | `OUT_OF_POLICY` using `TMP-CAT-01`; route to `TREASURER`. |
-| 3 | `expense_proof_status` is not `PRESENT`. | `MISSING_FACT` using `TMP-EVD-01`. Ask for expense proof/reference. |
-| 4 | Allowed, evidenced amount is greater than `1000`. | `AUTHORITY_EXCEEDED` using `TMP-AUT-02`; route to `TREASURER`. |
+| 1 | Routine-decision fact is null, blank, or otherwise absent. | `MISSING_FACT` using `TMP-REQ-01`. Ask for the first missing fact. |
+| 2 | Category is not in the allow-list. | `OUT_OF_POLICY` using `TMP-CAT-01`. Flag for later human handling. |
+| 3 | `expense.evidence_status` is not `PRESENT`. | `MISSING_FACT` using `TMP-EVD-01`. Ask for expense proof/reference. |
+| 4 | Allowed, evidenced amount is greater than `1000`. | `AUTHORITY_EXCEEDED` using `TMP-AUT-02`. Flag for later human handling. |
 | 5 | No previous condition applies. | `AUTO_APPROVED` using `TMP-AUT-01`. |
 
-Documented missing-fact field order: `requester_role`, `claim_route`, `activity_ref`, `purpose`, `expense`, `expense.category`, `expense.description`, `expense.amount_vnd`, `expense.expense_date`, `expense_proof_status`.
+The documented missing-fact field order is deferred to the normalization layer.
 
-## 4. State and persistence behavior
+## 7. Structural validation versus missing business facts
 
-```text
-valid transport submission
-  → persist Case[state=SUBMITTED]
-  → append Audit[SUBMITTED, actor=TEST_CLIENT]
-  → evaluate synchronously
-  → persist Decision[state=EVALUATED]
-  → append Audit[EVALUATED, actor=SYSTEM]
-  → return case + decision + ordered audit history
-```
+| Condition | Layer 0 behavior |
+| --- | --- |
+| Blank `case_id`, invalid timestamp, unknown enum token, boolean or non-integer amount, or zero or negative amount | Rejected by the record shape validator before a future evaluator runs. |
+| A business field that is null or blank in an otherwise transport-valid case | Allowed by the record shape; the future evaluator returns `MISSING_FACT`. |
 
-- A temporary case is evaluated once in v0.1; `EVALUATED` is terminal.
-- There are no temporary human approve/reject, pause, undo, payment, or re-evaluate operations.
-- Case, decision, and audit records must be queryable by `case_id` after persistence.
-- If persistence of the decision/audit cannot complete, the service must not report a successful evaluation response.
+`INPUT_INVALID` is a future adapter error label, not a `DecisionOutcome` and not part of the real-policy outcome vocabulary.
 
-## 5. Adapter validation versus business missing facts
+## 8. Explicitly deferred
 
-| Condition | Service result | Persists a case/decision? |
-| --- | --- | --- |
-| Malformed body, missing `case_id`/`submitted_at`, invalid timestamp, invalid enum token, non-integer amount, zero/negative amount, or an unsupported route token | Transport validation error `INPUT_INVALID`; list exact invalid field(s). | No. This is not a business decision. |
-| Valid transport shape but a business-required field is null/blank | Evaluator returns `MISSING_FACT`. | Yes: submitted case, decision, and two audit events. |
-| Valid complete shape | Evaluator returns one of the four temporary outcomes. | Yes: submitted case, decision, and two audit events. |
+- Whitespace normalization and missing-field order.
+- Question wording and question keys.
+- Policy evaluation and rule precedence implementation.
+- Fixture loading and evaluator matrix tests.
+- Case, decision, and audit persistence.
+- API endpoints and response serialization.
+- Reviewer queues, approval actions, and real authority claims.
+- Evidence upload, storage, OCR, receipt inspection, or verification.
+- Real workflow migration.
 
-`INPUT_INVALID` is an adapter error label, not a `DecisionOutcome` and not part of the future real-policy outcome vocabulary.
+## 9. Replacement gate
 
-## 6. Minimum service operations
-
-The technology/framework may choose endpoint names, but it must provide these operations:
-
-| Operation | Input | Output | Constraints |
-| --- | --- | --- | --- |
-| Submit and evaluate temporary case | `CaseSubmission` | `CaseDetail` or `INPUT_INVALID` | Server stamps temporary provenance and evaluates synchronously. |
-| Read temporary case detail | `case_id` | Case snapshot, decision, ordered audit history, profile provenance | Must visibly identify temporary/synthetic/unvalidated status. |
-| Run fixture suite | None or fixture selector | Per-fixture expected/actual outcome and pass/fail | Must use the same evaluator path as case submission. |
-
-## 7. Required fixture expectations
-
-Use the fixture IDs and rules from [03_temporary_demo_policy.md](03_temporary_demo_policy.md) and [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv):
-
-| Fixture | Expected outcome | Key assertion |
-| --- | --- | --- |
-| `TMP-001` | `AUTO_APPROVED` | Result contains temporary/no-payment disclosure and `TMP-AUT-01`. |
-| `TMP-002` | `MISSING_FACT` | Question identifies `activity_ref`. |
-| `TMP-003` | `MISSING_FACT` | Question identifies expense proof/reference. |
-| `TMP-004` | `OUT_OF_POLICY` | Route is `TREASURER`; rule is `TMP-CAT-01`. |
-| `TMP-005` | `AUTHORITY_EXCEEDED` | Route is `TREASURER`; rule is `TMP-AUT-02`. |
-| `TMP-006` | `AUTO_APPROVED` | Exact authority boundary (`1000`) is inclusive. |
-
-Every persisted fixture case must have exactly two ordered audit events: `SUBMITTED`, then `EVALUATED`.
-
-## 8. Replacement gate
-
-This contract must be replaced, not patched silently, when a validated workflow exists. A replacement must:
+This contract must be replaced, not patched silently, when a validated workflow exists.
+A replacement must:
 
 - use a new profile ID/source/version;
 - map observed packet artifacts to input fields deliberately;
-- obtain a named owner’s approval for policy/authority behavior;
+- obtain a named owner's approval for policy/authority behavior;
 - preserve temporary records as synthetic historical data;
 - revise evaluator tests, API wording, policy document, and public fixtures together.

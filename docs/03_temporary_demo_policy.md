@@ -1,10 +1,10 @@
-# Temporary Demo Policy `TMP-DEV-001`
+# Temporary Demo Policy `TMP-DEV-001` v0.2
 
 ## Document control
 
-**Status:** Temporary development policy — non-canonical.
+**Status:** Temporary development policy - non-canonical.
 
-**Purpose:** Supply explicit, synthetic business rules so the evaluator, demo fixtures, and audit behavior can be built before a participating club validates its real workflow and policy.
+**Purpose:** Supply explicit, synthetic business rules so the evaluator, demo fixtures, and later persistence behavior can be built before a participating club validates its real workflow and policy.
 
 **Not a claim:** This is not a club policy, financial procedure, institutional rule, user-research finding, or public-demo evidence.
 
@@ -22,23 +22,27 @@
 | Workflow validation status | `UNVALIDATED` |
 | Purpose | Backend and test-fixture development only |
 
-Every decision made under this policy must visibly state that it uses a temporary development profile. It must never be described as a real club approval policy.
+Every decision made under this policy must visibly state that it uses a temporary development profile.
+It must never be described as a real club approval policy.
 
 ## 2. Scope
 
 This policy evaluates one synthetic, self-paid, post-spend request with one expense line.
 
-It does not define payment, bank transfer, accounting, tax, receipt authentication, uploads, advance reconciliation, direct-vendor payment, or real authority delegation.
+The only supported claim route is `SELF_PAID`.
+The client does not submit a route field.
+
+This policy does not define payment, bank transfer, accounting, tax, receipt authentication, uploads, advance reconciliation, direct-vendor payment, or real authority delegation.
 
 ## 3. Synthetic policy rules
 
 | Rule ID | Condition | Policy result |
 | --- | --- | --- |
 | `TMP-REQ-01` | A required business fact is absent. | `MISSING_FACT`; ask for the first missing fact. |
-| `TMP-CAT-01` | Category is `TEST_BLOCKED` or has no entry in this temporary policy. | `OUT_OF_POLICY`; route the exception question to temporary `TREASURER`. |
-| `TMP-EVD-01` | An otherwise eligible case has expense-proof status other than `PRESENT`. | `MISSING_FACT`; ask for expense proof/reference. |
-| `TMP-AUT-01` | An eligible, evidenced case has amount at or below `DEV_AUTO_LIMIT_VND`. | `AUTO_APPROVED`. |
-| `TMP-AUT-02` | An eligible, evidenced case has amount above `DEV_AUTO_LIMIT_VND`. | `AUTHORITY_EXCEEDED`; route to temporary `TREASURER`. |
+| `TMP-CAT-01` | Category is not in the temporary allow-list. | `OUT_OF_POLICY`; flag the case for later human handling. |
+| `TMP-EVD-01` | An otherwise eligible case has `expense.evidence_status` other than `PRESENT`. | `MISSING_FACT`; ask for expense proof/reference. |
+| `TMP-AUT-01` | An eligible, evidenced case has amount at or below `auto_approve_limit_vnd`. | `AUTO_APPROVED`. |
+| `TMP-AUT-02` | An eligible, evidenced case has amount above `auto_approve_limit_vnd`. | `AUTHORITY_EXCEEDED`; flag the case for later human handling. |
 
 ## 4. Synthetic parameters
 
@@ -46,24 +50,25 @@ All values below are arbitrary test constants chosen to make temporary behavior 
 
 | Parameter | Value |
 | --- | --- |
-| Supported claim route | `SELF_PAID` |
-| Allowed category | `TEST_ALLOWED` |
-| Blocked category | `TEST_BLOCKED` |
-| Required expense-proof status | `PRESENT` |
-| `DEV_AUTO_LIMIT_VND` | `1000` |
-| Temporary reviewer route | `TREASURER` |
+| Allowed categories | `{TEST_ALLOWED}` |
+| Required evidence status | `PRESENT` |
+| `auto_approve_limit_vnd` | `1000` |
 
-The numeric value `1000`, category labels, and reviewer route are not candidate club rules. They must not be copied into a real policy.
+`TEST_BLOCKED` is not a separately stored negative list.
+It is simply a category label outside the allow-list, so a `TEST_BLOCKED` category is out of policy.
+
+The numeric value `1000` and the category labels are not candidate club rules.
+They must not be copied into a real policy.
 
 ## 5. Evaluation order
 
 The evaluator applies the first applicable rule:
 
-1. Required business fact missing → `MISSING_FACT` (`TMP-REQ-01`).
-2. Category blocked/unknown → `OUT_OF_POLICY` (`TMP-CAT-01`).
-3. Required proof not `PRESENT` → `MISSING_FACT` (`TMP-EVD-01`).
-4. Amount above `1000` → `AUTHORITY_EXCEEDED` (`TMP-AUT-02`).
-5. Otherwise → `AUTO_APPROVED` (`TMP-AUT-01`).
+1. Required business fact missing - `MISSING_FACT` (`TMP-REQ-01`).
+2. Category not in the allow-list - `OUT_OF_POLICY` (`TMP-CAT-01`).
+3. Required evidence status not `PRESENT` - `MISSING_FACT` (`TMP-EVD-01`).
+4. Amount above `1000` - `AUTHORITY_EXCEEDED` (`TMP-AUT-02`).
+5. Otherwise - `AUTO_APPROVED` (`TMP-AUT-01`).
 
 For a routine result, the displayed message must state:
 
@@ -79,8 +84,8 @@ Retire this policy rather than editing it into a real policy when the team has:
 
 - a validated manual-workflow summary;
 - a named policy owner;
-- owner-approved categories, evidence requirements, authority behavior, and reviewer route;
+- owner-approved categories, evidence requirements, and authority behavior;
 - a new non-temporary policy ID/version/source; and
 - revised system contract, fixtures, UI wording, and public demo claims.
 
-Temporary cases, decisions, and audit events remain labelled synthetic/historical after replacement.
+Temporary cases, decisions, and audit events remain labelled synthetic and historical after replacement.

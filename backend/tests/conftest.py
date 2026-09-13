@@ -1,9 +1,9 @@
-"""Shared pytest fixtures and the L3 test-only temporary corpus reader."""
+"""Shared pytest fixtures for the temporary corpus and L3 evaluation tests."""
 
 from __future__ import annotations
 
 import csv
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import date, datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app.core.settings import get_settings
 from app.domain.enums import EvidenceStatus, TemporaryCategory
-from app.domain.models import CaseSubmission, Expense
+from app.domain.models import CaseSubmission, DecisionDraft, Expense
 from app.policy.profile import TMP_DEV_001_PROFILE
 
 TEST_DATABASE_URL = "postgresql+psycopg2://decisioncore:decisioncore@localhost:5432/decisioncore"
@@ -45,7 +45,7 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 # ---------------------------------------------------------------------------
-# Temporary corpus reader (L3 reader-first scope).
+# Temporary corpus reader for the L3 test suite.
 #
 # Reads the canonical temporary corpus as test-only data and converts each row
 # into the frozen Layer 0 CaseSubmission shape. Production code never imports
@@ -220,3 +220,15 @@ def corpus_reader_tools() -> SimpleNamespace:
         read_corpus=_read_temporary_corpus,
         submission_from_row=_case_submission_from_corpus_row,
     )
+
+
+@pytest.fixture(scope="session")
+def evaluate_submission() -> Callable[[CaseSubmission], DecisionDraft]:
+    """Return the real L1 normalization plus L2 evaluation composition."""
+    from app.policy.evaluator import evaluate_case
+    from app.policy.normalization import normalize_case
+
+    def _evaluate(submission: CaseSubmission) -> DecisionDraft:
+        return evaluate_case(normalize_case(submission), TMP_DEV_001_PROFILE)
+
+    return _evaluate

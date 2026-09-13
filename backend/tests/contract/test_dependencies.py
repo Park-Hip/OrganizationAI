@@ -60,6 +60,40 @@ assert l1.first_missing_field(l1.normalize_case(blank_case)) == "purpose"
 
 for module_name in ("fastapi", "sqlalchemy", "app.core.settings", "app.persistence"):
     assert module_name not in sys.modules, f"{module_name} was imported by Layer 1"
+
+from app.policy import evaluate_case
+
+missing_draft = evaluate_case(l1.normalize_case(blank_case), TMP_DEV_001_PROFILE)
+assert missing_draft.outcome.value == "MISSING_FACT"
+assert missing_draft.applied_rule_id.value == "TMP-REQ-01"
+assert missing_draft.profile_id == "TMP-DEV-001"
+
+routine = l1.normalize_case(
+    CaseSubmission.model_validate(
+        {
+            "case_id": "PROBE-02",
+            "submitted_at": "2026-01-15T09:00:00Z",
+            "requester_role": "TEST_REQUESTER",
+            "purpose": "Probe purpose",
+            "expense": {
+                "category": "TEST_ALLOWED",
+                "description": "Probe line",
+                "amount_vnd": 999,
+                "expense_date": "2026-01-14",
+                "evidence_status": "PRESENT",
+            },
+        }
+    )
+)
+routine_draft = evaluate_case(routine, TMP_DEV_001_PROFILE)
+assert routine_draft.outcome.value == "AUTO_APPROVED"
+assert routine_draft.applied_rule_id.value == "TMP-AUT-01"
+assert (
+    routine_draft.reason == "Approved under temporary development profile; no payment was made."
+)
+
+for module_name in ("fastapi", "sqlalchemy", "app.core.settings", "app.persistence"):
+    assert module_name not in sys.modules, f"{module_name} was imported by Layer 2"
 print("import-boundary-ok")
 """
 

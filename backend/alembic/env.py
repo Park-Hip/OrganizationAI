@@ -10,6 +10,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
+import app.persistence.models  # noqa: F401  # register mapped entities
 from alembic import context
 from app.core.settings import get_settings
 from app.persistence.db import Base

@@ -22,9 +22,6 @@ from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_TEST_DATABASE_URL = (
-    "postgresql+psycopg2://decisioncore:decisioncore@localhost:5433/decisioncore_test"
-)
 
 _TRUNCATE_TABLES_SQL = (
     "TRUNCATE temporary_audit_events, "
@@ -35,7 +32,10 @@ _TRUNCATE_TABLES_SQL = (
 
 def test_database_url() -> str:
     """Return the isolated synthetic-only test database URL from the environment."""
-    return os.environ.get("TEST_DATABASE_URL", DEFAULT_TEST_DATABASE_URL)
+    database_url = os.environ.get("TEST_DATABASE_URL")
+    if not database_url:
+        pytest.skip("TEST_DATABASE_URL must name the synthetic-only test database")
+    return database_url
 
 
 def run_alembic(*args: str) -> None:

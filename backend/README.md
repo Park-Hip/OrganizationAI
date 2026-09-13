@@ -157,7 +157,7 @@ export TEST_DATABASE_URL='postgresql+psycopg2://decisioncore:<your-postgres-pass
 uv run pytest tests/integration
 ```
 
-Use the same password you set for `POSTGRES_PASSWORD`. When `TEST_DATABASE_URL` is unset or the server is unreachable, the database integration tests skip with a clear message so the short quality gate still runs.
+`TEST_DATABASE_URL` is required. Use the same password you set for `POSTGRES_PASSWORD`. When it is unset or the server is unreachable, the database integration tests skip with a clear message so the short quality gate still runs.
 
 ## Not in current scope
 

@@ -1,7 +1,7 @@
 # OrganizationalAI backend (temporary)
 
-This directory is the temporary backend development foundation for the L0 contract-and-tooling task.
-It contains a frozen domain vocabulary, one temporary profile constant, and no policy evaluation, domain tables, or public product API yet.
+This directory is the temporary backend development foundation for the L0 contract-and-tooling task and the Layer 1 normalization work.
+It contains a frozen domain vocabulary, one temporary profile constant, a pure Layer 1 normalizer, and no policy evaluation, domain tables, or public product API yet.
 Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
@@ -85,6 +85,7 @@ It stops on the first failure and returns that exit code.
 - A clean clone installs and configures from committed, locked dependencies.
 - The typed settings object fails fast when `DATABASE_URL` is absent.
 - The frozen domain vocabulary and sole profile construct and validate their structural rules.
+- The Layer 1 normalizer converts whitespace-only decision-bearing text to canonical absence and exposes a deterministic first-missing-fact order and repair-question map without any I/O.
 - FastAPI metadata and startup logging resolve from typed runtime settings.
 - Postgres starts through a reproducible Compose definition with a health check.
 - Alembic is wired to typed settings without a speculative schema.
@@ -112,11 +113,23 @@ The backend freezes the smallest contract needed before normalization and pure p
 - `app/policy/profile.py` exports exactly one immutable temporary profile, `TMP_DEV_001_PROFILE`, with provenance, `{TEST_ALLOWED}`, required evidence `PRESENT`, and an inclusive `1000` limit.
 - `tests/contract/` proves the enum values, structural validation, deep immutability, decision-draft combinations, and the import boundary without starting FastAPI or a database.
 
-The contract intentionally has no evaluator, normalizer, API schema, or persistence model yet.
+The contract intentionally has no evaluator, API schema, or persistence model yet.
 
-## Not in L0 scope
+## Layer 1 normalization
+
+Layer 1 adds one pure policy module, `app/policy/normalization.py`, with no HTTP, database, clock, file, LLM, settings, or profile dependency.
+
+- `normalize_case` copies a validated `CaseSubmission` into a `NormalizedCase`, converting only whitespace-only `purpose` and `expense.description` values to absent while preserving all nonblank text exactly.
+- `first_missing_field` returns the first absent field path in the fixed order `purpose`, `expense.category`, `expense.description`, `expense.amount_vnd`, `expense.expense_date`, `expense.evidence_status`, or no value when the case is complete.
+- `question_for_field_path` returns the exact synthetic-safe repair question for any approved field path.
+
+An absent `expense` yields `expense.category` as the first missing field.
+A declared `NOT_PROVIDED` evidence status is not a structurally missing fact; its rule-specific wording belongs to the future evaluator with `TMP-EVD-01`.
+
+## Not in L0 or L1 scope
 
 - No policy evaluator.
+- No rule-specific question wording such as the `TMP-EVD-01` evidence-referral prompt.
 - No Case, Decision, or Audit tables.
 - No submit, detail, or fixture endpoints.
 - No human control, authentication, payment, upload, OCR, LLM, or LangChain/Langfuse features.

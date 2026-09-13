@@ -74,7 +74,8 @@ The shape has no profile, provenance, activity reference, or human-handling assi
 ### 3.3 `NormalizedCase`
 
 Same fields as `CaseSubmission`.
-Layer 0 creates the type only; normalization rules are deferred.
+Layer 1 constructs it from a validated `CaseSubmission`.
+The normalization rules are defined in section 6.3.
 
 ### 3.4 `TemporaryProfile`
 
@@ -157,7 +158,37 @@ Layer 0 freezes only the input and output types and the profile constant.
 | 4 | Allowed, evidenced amount is greater than `1000`. | `AUTHORITY_EXCEEDED` using `TMP-AUT-02`. Flag for later human handling. |
 | 5 | No previous condition applies. | `AUTO_APPROVED` using `TMP-AUT-01`. |
 
-The documented missing-fact field order is deferred to the normalization layer.
+The first-missing-fact field order and repair wording are defined in section 6.3 and implemented by the Layer 1 normalizer.
+
+### 6.3 Layer 1 normalization and repair questions
+
+The Layer 1 normalizer is a pure function from `CaseSubmission` to `NormalizedCase`.
+It copies every field and applies one change: a `purpose` or `expense.description` value with no non-whitespace content becomes null.
+A nonblank string is preserved exactly, including surrounding whitespace.
+`case_id` and `requester_role` are never altered, because no temporary policy rule decides from them.
+
+The first-missing-fact order is fixed:
+
+1. `purpose`
+2. `expense.category`
+3. `expense.description`
+4. `expense.amount_vnd`
+5. `expense.expense_date`
+6. `expense.evidence_status`
+
+When `expense` is null, the first missing fact is `expense.category`.
+
+Each field has one exact repair question:
+
+- `purpose`: the question `What is the synthetic purpose of this expense?`
+- `expense.category`: the question `Which temporary expense category applies to this synthetic expense?`
+- `expense.description`: the question `What is the synthetic expense description?`
+- `expense.amount_vnd`: the question `What is the positive integer synthetic expense amount in VND?`
+- `expense.expense_date`: the question `What is the synthetic expense date?`
+- `expense.evidence_status`: the question `Is the declared synthetic expense evidence status PRESENT or NOT_PROVIDED?`
+
+A declared `NOT_PROVIDED` evidence status is not a structurally missing fact.
+Its rule-specific repair wording belongs to the evaluator with `TMP-EVD-01`.
 
 ## 7. Structural validation versus missing business facts
 
@@ -170,8 +201,7 @@ The documented missing-fact field order is deferred to the normalization layer.
 
 ## 8. Explicitly deferred
 
-- Whitespace normalization and missing-field order.
-- Question wording and identifiers.
+- Rule-specific question wording and any separate question identifier, such as the `TMP-EVD-01` evidence-referral prompt.
 - Policy evaluation and rule precedence implementation.
 - Fixture loading and evaluator matrix tests.
 - Case, decision, and audit persistence.

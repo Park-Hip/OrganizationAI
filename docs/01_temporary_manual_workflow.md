@@ -22,7 +22,7 @@ Do not silently relabel this temporary workflow as observed evidence.
 
 ## 1. One-sentence workflow
 
-> A synthetic test requester submits one synthetic self-paid expense case; the system validates its declared facts against `TMP-DEV-001` and returns either a routine temporary-policy result or a repair question.
+> A synthetic test requester will submit one synthetic self-paid expense case when the deferred service exists; Layer 0 freezes the facts and result shape that its future evaluator will use.
 
 ## 2. Scope boundary
 
@@ -34,22 +34,22 @@ Do not silently relabel this temporary workflow as observed evidence.
 | Deterministic evaluation | LLM decision-making or inferred facts |
 | Case, decision, and append-only audit persistence as a later layer | Payment, bank transfer, accounting, tax, or advance reconciliation |
 
-The only supported claim route is `SELF_PAID`.
-The client does not submit a route field; the one-route scope is stated once in the temporary policy.
+The temporary policy's self-paid scope is stated in [03_temporary_demo_policy.md](03_temporary_demo_policy.md).
+It creates no field on the client transport shape.
 
 ## 3. Temporary roles
 
 | Role | Temporary action | Not a claim about reality |
 | --- | --- | --- |
-| `TEST_REQUESTER` | Sends a synthetic case object through the temporary service. | Not a real club member or defined requester role. |
-| `SYSTEM` | Validates and evaluates `TMP-DEV-001`, then returns a result. | Does not authorize payment or exercise human discretion. |
+| `TEST_REQUESTER` | Will send a synthetic case object through a future temporary service. | Not a real club member or defined requester role. |
+| `SYSTEM` | Will validate and evaluate `TMP-DEV-001` when the deferred evaluator layer is built. | Does not authorize payment or exercise human discretion. |
 
-There is no temporary reviewer role in Layer 0.
-`OUT_OF_POLICY` and `AUTHORITY_EXCEEDED` only identify cases that need later human handling; no routing authority is claimed.
+Layer 0 models no human-handling role.
+`OUT_OF_POLICY` and `AUTHORITY_EXCEEDED` only identify cases that need later human handling; no authority is claimed.
 
 ## 4. Temporary input
 
-The test requester submits the one-line case shape defined in the system contract:
+The test requester will submit the one-line case shape defined in the system contract when a transport layer is built:
 
 | Group | Declared fields | Why they exist in the temporary workflow |
 | --- | --- | --- |
@@ -60,27 +60,27 @@ The test requester submits the one-line case shape defined in the system contrac
 
 A client cannot select or alter provenance, and the transport shape rejects any profile or provenance field.
 
-## 5. Temporary workflow steps
+## 5. Deferred temporary workflow steps
 
 | Step | Actor | Action | Output / handoff |
 | --- | --- | --- | --- |
-| 1. Prepare fixture | `TEST_REQUESTER` | Selects or creates a synthetic one-line self-paid case. | Transport-valid case object. |
-| 2. Submit | `TEST_REQUESTER` to service | Sends the case to the temporary submit-and-evaluate operation. | Accepted synthetic case. |
-| 3. Validate transport | `SYSTEM` | Rejects malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
-| 4. Evaluate policy | `SYSTEM` | Applies `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
-| 5. Return explanation | `SYSTEM` to `TEST_REQUESTER` | Returns outcome, applied rule, reason, and a question when the outcome is `MISSING_FACT`. | Inspectable result; no payment action. |
+| 1. Prepare fixture | `TEST_REQUESTER` | Will select or create a synthetic one-line self-paid case. | Transport-valid case object. |
+| 2. Submit | `TEST_REQUESTER` to service | Will send the case to a future submit-and-evaluate operation. | Accepted synthetic case. |
+| 3. Validate transport | `SYSTEM` | A future adapter will reject malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
+| 4. Evaluate policy | `SYSTEM` | A future evaluator will apply `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
+| 5. Return explanation | `SYSTEM` to `TEST_REQUESTER` | A future service will return outcome, applied rule, reason, and a question when the outcome is `MISSING_FACT`. | Inspectable result; no payment action. |
 
 Persistence of the case, decision, and append-only audit history is defined by a later persistence layer, not by this Layer 0 contract.
 
-## 6. Temporary decision paths
+## 6. Deferred temporary decision paths
 
 | Condition | Result | System response |
 | --- | --- | --- |
-| A business fact is absent, null, or blank in an otherwise transport-valid case. | `MISSING_FACT` | Ask for the first missing fact. |
-| Category is not in the profile allow-list, for example `TEST_BLOCKED`. | `OUT_OF_POLICY` | Cite `TMP-CAT-01`; flag the case for later human handling. |
-| Eligible case has a declared evidence status other than `PRESENT`. | `MISSING_FACT` | Ask for expense proof/reference. |
-| Complete allowed and evidenced case has amount above the temporary `1000` constant. | `AUTHORITY_EXCEEDED` | Cite `TMP-AUT-02`; flag the case for later human handling. |
-| None of the preceding conditions applies. | `AUTO_APPROVED` | State: "Approved under temporary development profile; no payment was made." |
+| A business fact is absent, null, or blank in an otherwise transport-valid case. | `MISSING_FACT` | The future evaluator will ask for the first missing fact. |
+| Category is not in the profile allow-list, for example `TEST_BLOCKED`. | `OUT_OF_POLICY` | The future evaluator will cite `TMP-CAT-01` and flag the case for later human handling. |
+| Eligible case has a declared evidence status other than `PRESENT`. | `MISSING_FACT` | The future evaluator will ask for expense proof/reference. |
+| Complete allowed and evidenced case has amount above the temporary `1000` constant. | `AUTHORITY_EXCEEDED` | The future evaluator will cite `TMP-AUT-02` and flag the case for later human handling. |
+| None of the preceding conditions applies. | `AUTO_APPROVED` | The future evaluator will state: "Approved under temporary development profile; no payment was made." |
 
 ## 7. Completion criteria for this temporary workflow
 

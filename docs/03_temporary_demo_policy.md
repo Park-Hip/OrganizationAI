@@ -27,10 +27,9 @@ It must never be described as a real club approval policy.
 
 ## 2. Scope
 
-This policy evaluates one synthetic, self-paid, post-spend request with one expense line.
+The future evaluator under this policy will evaluate one synthetic, self-paid, post-spend request with one expense line.
 
-The only supported claim route is `SELF_PAID`.
-The client does not submit a route field.
+This scope creates no client transport field.
 
 This policy does not define payment, bank transfer, accounting, tax, receipt authentication, uploads, advance reconciliation, direct-vendor payment, or real authority delegation.
 
@@ -62,7 +61,7 @@ They must not be copied into a real policy.
 
 ## 5. Evaluation order
 
-The evaluator applies the first applicable rule:
+When implemented, the evaluator will apply the first applicable rule:
 
 1. Required business fact missing - `MISSING_FACT` (`TMP-REQ-01`).
 2. Category not in the allow-list - `OUT_OF_POLICY` (`TMP-CAT-01`).

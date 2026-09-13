@@ -14,12 +14,12 @@
 
 ## 1. Invariants
 
-1. The only supported claim route is `SELF_PAID`; the client payload has no route field.
+1. The temporary policy's synthetic self-paid scope adds no field to `CaseSubmission`.
 2. Each case has exactly one optional expense object.
 3. Every `Expense` business field can be null so a later evaluator can return a safe `MISSING_FACT` decision.
 4. A client cannot submit profile or provenance fields.
-5. The evaluator is deterministic: the same normalized case and immutable profile snapshot produce the same decision.
-6. A decision never makes, authorizes, or reports a payment.
+5. The future evaluator will be deterministic: the same normalized case and immutable profile snapshot produce the same decision.
+6. A future decision never makes, authorizes, or reports a payment.
 7. Persistence and append-only audit records are defined by the persistence layer, not by Layer 0.
 
 ## 2. Frozen enums
@@ -36,7 +36,7 @@ All enums subclass `str` and `Enum` for stable serialization.
 | `DataClass` | `SYNTHETIC` | Temporary provenance marker. |
 | `WorkflowValidationStatus` | `UNVALIDATED` | Temporary provenance marker. |
 
-There are no `ClaimRoute`, `ReviewerRoute`, `CaseState`, `AuditAction`, `AuditActor`, or `QuestionKey` enums in Layer 0.
+This table is the complete Layer 0 enum vocabulary.
 
 ## 3. Frozen record shapes
 
@@ -69,7 +69,7 @@ The client transport shape.
 | `purpose` | string or null | Stated purpose. |
 | `expense` | `Expense` or null | Exactly one optional expense object. |
 
-The shape has no profile, provenance, claim route, activity reference, or reviewer route.
+The shape has no profile, provenance, activity reference, or human-handling assignment.
 
 ### 3.3 `NormalizedCase`
 
@@ -90,7 +90,7 @@ An immutable server-owned snapshot.
 | `required_evidence_status` | `EvidenceStatus` | The evidence state the policy requires. |
 | `auto_approve_limit_vnd` | positive integer | Inclusive automatic approval limit. |
 
-There is no `blocked_categories`, `authority_exceeded_route`, or reviewer route field.
+The allow-list and automatic-approval limit are the profile's only policy controls.
 
 ### 3.5 `DecisionDraft`
 
@@ -101,10 +101,10 @@ A pure decision result.
 | `outcome` | `DecisionOutcome` | Result of deterministic evaluation. |
 | `applied_rule_id` | `TemporaryRuleId` | The single first-applicable rule. |
 | `reason` | non-blank string | Short, user-readable explanation. |
-| `question` | string or null | Nullable question text only; no question key. |
+| `question` | string or null | Nullable question text only; no separate identifier. |
 | `profile_id` | non-blank string | Links the result to the profile that produced it. |
 
-The shape has no route, question key, decision ID, timestamp, audit state, or persistence snapshot.
+The shape has no human-handling assignment, separate question identifier, decision ID, timestamp, audit state, or persistence snapshot.
 
 ## 4. Temporary profile constant
 
@@ -147,7 +147,7 @@ normalized temporary case + immutable TMP-DEV-001 profile snapshot
 The future evaluator has no HTTP, database, LLM, clock, file, payment, or external-service dependency.
 Layer 0 freezes only the input and output types and the profile constant.
 
-### 6.2 Rule precedence
+### 6.2 Deferred rule precedence
 
 | Priority | Check | Result |
 | --- | --- | --- |
@@ -171,12 +171,12 @@ The documented missing-fact field order is deferred to the normalization layer.
 ## 8. Explicitly deferred
 
 - Whitespace normalization and missing-field order.
-- Question wording and question keys.
+- Question wording and identifiers.
 - Policy evaluation and rule precedence implementation.
 - Fixture loading and evaluator matrix tests.
 - Case, decision, and audit persistence.
 - API endpoints and response serialization.
-- Reviewer queues, approval actions, and real authority claims.
+- Human queues, approval actions, and real authority claims.
 - Evidence upload, storage, OCR, receipt inspection, or verification.
 - Real workflow migration.
 

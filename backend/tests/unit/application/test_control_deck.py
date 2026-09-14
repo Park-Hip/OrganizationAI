@@ -197,6 +197,50 @@ def test_idempotent_retry_returns_saved_result_without_appending() -> None:
     assert result.control_state == "PAUSED"  # replay reflects the stored receipt chain
 
 
+def test_idempotent_retry_returns_the_original_view_after_later_events() -> None:
+    case = _stored_case("OUT_OF_POLICY")
+    repository = _RecordingControlRepository(case)
+    session = cast(Session, _FakeSession())
+    key = "control-key-3"
+
+    first = submit_control(
+        case.trace_id,
+        ControlCommand.PAUSE,
+        session,
+        reason="pause for review",
+        idempotency_key=key,
+        repository=repository,
+        clock=lambda: _FIXED_NOW,
+        id_factory=lambda: UUID(int=99),
+    )
+    repository.receipts[key] = repository.appended[0]
+    resumed = submit_control(
+        case.trace_id,
+        ControlCommand.RESUME,
+        session,
+        reason="resume review",
+        repository=repository,
+        clock=lambda: _FIXED_NOW,
+        id_factory=lambda: UUID(int=100),
+    )
+    replayed = submit_control(
+        case.trace_id,
+        ControlCommand.PAUSE,
+        session,
+        reason="pause for review",
+        idempotency_key=key,
+        repository=repository,
+        clock=lambda: _FIXED_NOW,
+        id_factory=lambda: UUID(int=101),
+    )
+
+    assert first.control_state == "PAUSED"
+    assert resumed.control_state == "AWAITING_REVIEW"
+    assert replayed.control_state == "PAUSED"
+    assert [event.sequence_number for event in replayed.events] == [1, 2, 3, 4]
+    assert len(repository.appended) == 2
+
+
 def test_idempotency_key_reuse_with_different_command_raises_conflict() -> None:
     case = _stored_case("OUT_OF_POLICY")
     repository = _RecordingControlRepository(case)

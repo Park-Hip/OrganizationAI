@@ -28,7 +28,7 @@ from app.domain.control import (
     reduce_control_state,
 )
 from app.domain.enums import DecisionOutcome
-from app.persistence.models.temporary_history import TemporaryAuditEvent
+from app.persistence.models.temporary_history import TemporaryAuditEvent, TemporaryCaseSnapshot
 from app.persistence.repositories.temporary_history import TemporaryHistoryRepository
 
 _Clock = Callable[[], datetime]
@@ -59,6 +59,17 @@ class ControlIdempotencyConflictError(Exception):
         )
         self.trace_id = trace_id
         self.idempotency_key = idempotency_key
+
+
+def _to_idempotency_result(
+    stored: TemporaryCaseSnapshot, receipt: TemporaryAuditEvent
+) -> TraceReadModel:
+    return _to_trace_model(
+        stored,
+        source_events=[
+            event for event in stored.events if event.sequence_number <= receipt.sequence_number
+        ],
+    )
 
 
 def _utc_now() -> datetime:
@@ -112,7 +123,7 @@ def _resolve_idempotency_conflict(
             stored = repository.find_trace(session, trace_id)
             if stored is None:
                 raise TraceNotFoundError(trace_id)
-            return _to_trace_model(stored)
+            return _to_idempotency_result(stored, receipt)
         if receipt is not None:
             raise ControlIdempotencyConflictError(trace_id, idempotency_key)
         # The conflicting row vanished unexpectedly; the caller can retry.
@@ -156,7 +167,7 @@ def submit_control(
                 receipt = repository.find_control_receipt(session, trace_id, idempotency_key)
                 if receipt is not None:
                     if receipt.command_fingerprint == fingerprint:
-                        return _to_trace_model(stored)
+                        return _to_idempotency_result(stored, receipt)
                     raise ControlIdempotencyConflictError(trace_id, idempotency_key)
 
             projection = reduce_control_state(

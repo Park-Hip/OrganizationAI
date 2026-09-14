@@ -8,7 +8,7 @@ code.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -124,7 +124,11 @@ def _is_duplicate_case_id(error: IntegrityError) -> bool:
     return "uq_temporary_case_snapshots_case_id" in str(error)
 
 
-def _to_trace_model(case: TemporaryCaseSnapshot) -> TraceReadModel:
+def _to_trace_model(
+    case: TemporaryCaseSnapshot,
+    *,
+    source_events: Sequence[TemporaryAuditEvent] | None = None,
+) -> TraceReadModel:
     decision = case.decision
     assert decision is not None, "a stored temporary trace never lacks a decision snapshot"
     provenance = ProvenanceReadModel(
@@ -133,7 +137,8 @@ def _to_trace_model(case: TemporaryCaseSnapshot) -> TraceReadModel:
         data_class=case.data_class,
         workflow_validation_status=case.workflow_validation_status,
     )
-    ordered_events = sorted(case.events, key=lambda item: item.sequence_number)
+    event_source = source_events if source_events is not None else case.events
+    ordered_events = sorted(event_source, key=lambda item: item.sequence_number)
     events = [
         AuditEventReadModel(
             event_id=event.event_id,

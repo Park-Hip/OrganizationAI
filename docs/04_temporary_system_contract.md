@@ -265,7 +265,8 @@ These labels are demonstrably synthetic and are not real approval or rejection w
 An illegal transition returns conflict (`ILLEGAL_CONTROL_ACTION`, 409) and creates no event or state effect.
 A reviewer cannot approve a `MISSING_FACT` case; its repair question stays visible.
 
-**Idempotency.** A command may carry a non-empty `idempotency_key` and persists a canonical `command_fingerprint` on its appended event.
+**Idempotency.** A command may carry a non-empty `idempotency_key` of at most 255 characters and persists a canonical `command_fingerprint` on its appended event.
+Neither the key nor the mandatory non-blank `reason` may contain a NUL character because both are persisted in the control event.
 A partial unique index on `(trace_id, idempotency_key)` makes a reused key race-safe.
 The same key with the same fingerprint returns the saved result without a second effect; the same key with a different fingerprint returns `CONTROL_IDEMPOTENCY_CONFLICT` (409).
 

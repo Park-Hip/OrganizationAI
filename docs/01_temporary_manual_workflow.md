@@ -43,9 +43,11 @@ It creates no field on the client transport shape.
 | --- | --- | --- |
 | `TEST_REQUESTER` | Sends a synthetic case object to the temporary decision-history API. | Not a real club member or defined requester role. |
 | `SYSTEM` | Validates transport, applies the Layer 2 `TMP-DEV-001` evaluator, and writes an immutable trace plus ordered `SYSTEM` audit events. | Does not authorize payment or exercise human discretion. |
+| `DEMO_REVIEWER` | The server records this fixed synthetic label on every temporary Control Deck event (pause, resume, demo review, or compensation). | Not a real reviewer, Treasurer, officer, or authority. The label proves the software mechanic without claiming a real authorization. |
 
 Layer 0 models no human-handling role.
 `OUT_OF_POLICY` and `AUTHORITY_EXCEEDED` only identify cases that need later human handling; no authority is claimed.
+`DEMO_REVIEWER` exists only in the temporary Control Deck on top of that stored history and is never a Layer 0 actor.
 
 ## 4. Temporary input
 
@@ -69,13 +71,15 @@ A client cannot select or alter provenance, and the transport shape rejects any 
 | 3. Validate transport | `SYSTEM` | The API adapter rejects malformed data such as an invalid enum token, invalid timestamp, blank case ID, or boolean/non-integer/non-positive amount. | `INPUT_INVALID`; no business decision is produced. |
 | 4. Evaluate policy | `SYSTEM` | The Layer 2 evaluator applies `TMP-DEV-001` in documented precedence order. | One of four policy outcomes. |
 | 5. Record and return | `SYSTEM` to `TEST_REQUESTER` | One transaction writes the immutable case snapshot, decision snapshot, and three ordered `SYSTEM` audit events, then returns outcome, rule, reason, and a question when the outcome is `MISSING_FACT`. | Stored, retrievable trace; no payment action. |
+| 6. Apply synthetic control | `DEMO_REVIEWER` via service | Appends exactly one labelled control event (`pause`, `resume`, `record_demo_review`, or `undo`) to the stored trace and returns the derived `control_state`. | An immutable append-only control event plus the projected state; the original decision snapshot never changes. |
 
-The service writes the complete synthetic history in one transaction and stores it as immutable snapshots and append-only audit events. `GET /api/temporary/decision-traces/{trace_id}` returns the stored history without reevaluating the decision. No human-control operation exists in this workflow.
+The service writes the complete synthetic history in one transaction and stores it as immutable snapshots and append-only audit events. `GET /api/temporary/decision-traces/{trace_id}` returns the stored history, including the derived `control_state`, without reevaluating the decision. No real human-control authority exists; the temporary Control Deck only appends labelled synthetic control events.
 
 ## 6. Temporary decision paths
 
 The Layer 2 evaluator returns one of the four temporary outcomes in the first-applicable order defined by the [temporary policy](03_temporary_demo_policy.md) and [system contract](04_temporary_system_contract.md).
-The surrounding service and persistence workflow are implemented by the temporary decision-history layer; human-control operations remain deferred.
+The surrounding service and persistence workflow are implemented by the temporary decision-history and Control Deck layers; real human-control authority remains deferred.
+The temporary Control Deck is a synthetic demo mechanic defined in [04_temporary_system_contract.md](04_temporary_system_contract.md) and does not claim a real reviewer decision.
 
 ## 7. Completion criteria for this temporary workflow
 

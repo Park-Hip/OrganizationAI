@@ -21,6 +21,8 @@ from app.api.schemas.temporary_history import (
     ProvenanceReadModel,
     TraceReadModel,
 )
+from app.domain.control import StoredAuditEvent, derive_control_state
+from app.domain.enums import DecisionOutcome
 from app.domain.models import CaseSubmission
 from app.persistence.models.temporary_history import (
     AuditAction,
@@ -131,6 +133,7 @@ def _to_trace_model(case: TemporaryCaseSnapshot) -> TraceReadModel:
         data_class=case.data_class,
         workflow_validation_status=case.workflow_validation_status,
     )
+    ordered_events = sorted(case.events, key=lambda item: item.sequence_number)
     events = [
         AuditEventReadModel(
             event_id=event.event_id,
@@ -141,8 +144,20 @@ def _to_trace_model(case: TemporaryCaseSnapshot) -> TraceReadModel:
             payload=event.payload,
             recorded_at=event.recorded_at,
         )
-        for event in sorted(case.events, key=lambda item: item.sequence_number)
+        for event in ordered_events
     ]
+    control_state = derive_control_state(
+        DecisionOutcome(decision.outcome),
+        [
+            StoredAuditEvent(
+                event_id=event.event_id,
+                sequence_number=event.sequence_number,
+                action=event.action,
+                payload=event.payload,
+            )
+            for event in ordered_events
+        ],
+    )
     return TraceReadModel(
         temporary_notice=TEMPORARY_NOTICE,
         trace_id=case.trace_id,
@@ -160,6 +175,7 @@ def _to_trace_model(case: TemporaryCaseSnapshot) -> TraceReadModel:
             decided_at=decision.decided_at,
         ),
         events=events,
+        control_state=control_state.value,
     )
 
 

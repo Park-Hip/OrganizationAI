@@ -14,10 +14,12 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
@@ -27,17 +29,22 @@ from app.persistence.db import Base
 
 
 class AuditActorType(str, Enum):  # noqa: UP042
-    """Technical actor labels. SYSTEM is not a human or authority claim."""
+    """Technical actor labels. None claims a real human or authority role."""
 
     SYSTEM = "SYSTEM"
+    DEMO_REVIEWER = "DEMO_REVIEWER"
 
 
 class AuditAction(str, Enum):  # noqa: UP042
-    """The only actions recorded by a submitted temporary trace."""
+    """Actions recorded by submitted traces and later synthetic controls."""
 
     CASE_RECEIVED = "CASE_RECEIVED"
     CASE_NORMALIZED = "CASE_NORMALIZED"
     DECISION_RECORDED = "DECISION_RECORDED"
+    CASE_PAUSED = "CASE_PAUSED"
+    CASE_RESUMED = "CASE_RESUMED"
+    DEMO_REVIEW_RECORDED = "DEMO_REVIEW_RECORDED"
+    CONTROL_COMPENSATED = "CONTROL_COMPENSATED"
 
 
 class TemporaryCaseSnapshot(Base):
@@ -96,6 +103,13 @@ class TemporaryAuditEvent(Base):
             "trace_id", "sequence_number", name="uq_temporary_audit_events_trace_sequence"
         ),
         CheckConstraint("sequence_number > 0", name="ck_temporary_audit_events_sequence_positive"),
+        Index(
+            "uq_temporary_audit_events_trace_idempotency",
+            "trace_id",
+            "idempotency_key",
+            unique=True,
+            postgresql_where=text("idempotency_key IS NOT NULL"),
+        ),
     )
 
     event_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
@@ -110,5 +124,7 @@ class TemporaryAuditEvent(Base):
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    command_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     case: Mapped[TemporaryCaseSnapshot] = relationship(back_populates="events")

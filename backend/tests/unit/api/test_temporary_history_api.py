@@ -69,6 +69,7 @@ def _canned_trace() -> TraceReadModel:
             decided_at=now,
         ),
         events=[],
+        control_state="AUTO_APPROVED",
     )
 
 

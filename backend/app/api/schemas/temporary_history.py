@@ -52,6 +52,7 @@ class TraceReadModel(BaseModel):
     facts_used: dict[str, object]
     decision: DecisionReadModel
     events: list[AuditEventReadModel]
+    control_state: str
 
 
 class ErrorBody(BaseModel):

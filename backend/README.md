@@ -1,7 +1,8 @@
 # OrganizationalAI backend (temporary)
 
 This directory is the temporary backend development foundation: a frozen domain vocabulary, one temporary profile constant, a pure Layer 1 normalizer, a pure Layer 2 evaluator, and a temporary decision-history persistence layer.
-The persistence layer stores immutable synthetic case/decision snapshots plus an append-only `SYSTEM` audit-event chain, and exposes a minimal submit-and-trace API under `/api/temporary/decision-traces`.
+The persistence layer stores immutable synthetic case/decision snapshots plus an append-only audit-event chain, and exposes a minimal submit-and-trace API under `/api/temporary/decision-traces`.
+A narrow temporary Control Deck appends labelled synthetic control events (`DEMO_REVIEWER`) and derives a visible `control_state` through a pure reducer, without mutating the finished ledger.
 Its operational `/health` readiness endpoint remains intentionally limited to process and database status.
 
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
@@ -91,6 +92,7 @@ It stops on the first failure and returns that exit code.
 - The Layer 2 evaluator returns a deterministic `DecisionDraft` from a normalized case and injected immutable profile without I/O, then applies missing-fact, category, evidence, authority, and automatic-approval precedence.
 - The temporary decision-history layer writes one immutable trace (case snapshot, decision snapshot, three ordered `SYSTEM` events) in a single transaction and rejects update/delete through immutability triggers.
 - The submit-and-trace API accepts only the frozen case shape, returns stored snapshots without reevaluating a past decision, and marks every business response as temporary, synthetic, and unvalidated.
+- The temporary Control Deck appends exactly one labelled synthetic control event per command (`pause`, `resume`, `record_demo_review`, `undo`), derives `control_state` from the stored decision plus control events, and rejects illegal transitions and reused idempotency keys without changing the original snapshots.
 - FastAPI metadata and startup logging resolve from typed runtime settings.
 - Postgres starts through a reproducible Compose definition with a health check.
 - Alembic applies the temporary decision-history revision reproducibly, with a clean downgrade.
@@ -147,6 +149,19 @@ The temporary decision-history layer adds immutable, append-only persistence and
 - **Append-only and atomic.** Each trace writes a case snapshot, a decision snapshot, and three `SYSTEM` events (`CASE_RECEIVED` → `CASE_NORMALIZED` → `DECISION_RECORDED`) in one transaction. A failed write leaves no partial record, and the database triggers reject update and delete.
 - **Reset (no API route).** For a local or demo reset, recreate the synthetic-only database and rerun `uv run alembic upgrade head`. Confirm first that the database contains no real data; the reset is intentionally destructive and is never exposed to an end user.
 
+## Temporary Control Deck
+
+The temporary Control Deck adds a narrow, synthetically labelled control layer on top of the finished decision-history ledger. The evaluator, normalizer, profile, and original snapshots are unchanged.
+
+- **Vocabulary.** The server records the fixed synthetic actor `DEMO_REVIEWER` and the append-only actions `CASE_PAUSED`, `CASE_RESUMED`, `DEMO_REVIEW_RECORDED`, and `CONTROL_COMPENSATED`. The bounded review disposition is `DEMO_ALLOW` or `DEMO_DECLINE`.
+- **Derived state.** `control_state` is one of `AUTO_APPROVED`, `AWAITING_INPUT`, `AWAITING_REVIEW`, `PAUSED`, or `DEMO_REVIEWED`, projected by the pure reducer in `app/domain/control.py`. It is never stored as a mutable column.
+- **Command service.** `app/application/control_deck.py` locks the trace row with `SELECT ... FOR UPDATE`, replays the reducer, validates the transition, calculates `max(sequence_number) + 1`, appends one event plus its idempotency receipt, and returns the derived trace view in a single transaction.
+- **Endpoint.** `POST /api/temporary/decision-traces/{trace_id}/controls` accepts `{command, reason, disposition?, idempotency_key?}` and returns the trace view with `control_state`. `GET /api/temporary/decision-traces/{trace_id}` also returns `control_state`.
+- **Errors.** Malformed commands return `422 INPUT_INVALID`, unknown traces `404 TRACE_NOT_FOUND`, and illegal transitions or reused keys `409 ILLEGAL_CONTROL_ACTION` or `409 CONTROL_IDEMPOTENCY_CONFLICT`.
+- **Undo.** `undo` compensates only the latest still-reversible control event by appending a `CONTROL_COMPENSATED` event that records `target_event_id` and the target's `prior_state`; it never edits or deletes the target.
+
+The authoritative vocabulary and transition matrix are in [docs/04_temporary_system_contract.md](../docs/04_temporary_system_contract.md).
+
 ## Database integration tests
 
 Service, migration, and immutability tests run against a separate, synthetic-only `test-db` service so they never touch a development or demo database.
@@ -157,10 +172,12 @@ export TEST_DATABASE_URL='postgresql+psycopg2://decisioncore:<your-postgres-pass
 uv run pytest tests/integration
 ```
 
-`TEST_DATABASE_URL` is required. Use the same password you set for `POSTGRES_PASSWORD`. When it is unset or the server is unreachable, the database integration tests skip with a clear message so the short quality gate still runs.
+`TEST_DATABASE_URL` is required to run the decision-history and Control Deck service, migration, immutability, idempotency, and concurrency tests against the synthetic-only `test-db` service.
+Use the same password you set for `POSTGRES_PASSWORD`.
+When `TEST_DATABASE_URL` is unset or the server is unreachable, the database integration tests skip with a clear message so the short quality gate still runs.
 
 ## Not in current scope
 
-- No pause, approve, reject, override, undo, reviewer queue, login, or role-based access control.
+- No real human approval, rejection, override, reviewer queue, login, or role-based access control. The temporary Control Deck is a synthetic demo mechanic using the fixed `DEMO_REVIEWER` label and never a real authority.
 - No payment, authentication, upload, OCR, LLM, or LangChain/Langfuse features.
 - No public deployment or production readiness claim.

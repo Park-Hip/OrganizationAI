@@ -229,9 +229,63 @@ The temporary backend adds an immutable, append-only persistence layer for synth
 
 **Reset.** Demo records are synthetic-only. A local/demo reset recreates the database and reruns the migration; no reset, list, bulk, or mutation operation is exposed through the API.
 
+## Temporary Control Deck contract (approved)
+
+The temporary backend adds a narrow, synthetically labelled control layer on top of the immutable decision-history ledger.
+It does not change Layer 0 record shapes, the normalizer, the evaluator, or the original decision snapshot.
+It does not create real human authority, authentication, or a payment side effect.
+
+**Terminology.** The only control actor is the server-recorded synthetic label `DEMO_REVIEWER`.
+The original three events keep actor `SYSTEM`.
+No client request selects the actor and no Treasurer, President, club officer, or other real role is claimed.
+
+**Control actions.** Control events append to the same immutable `temporary_audit_events` chain after the initial three `SYSTEM` events:
+
+| Action | Meaning | Payload fields |
+| --- | --- | --- |
+| `CASE_PAUSED` | Pause an escalation. | `reason`, `prior_state` |
+| `CASE_RESUMED` | Resume a pause, restoring its recorded `prior_state`. | `reason`, `prior_state`, `resumed_event_id` |
+| `DEMO_REVIEW_RECORDED` | Record a bounded synthetic review disposition. | `reason`, `disposition`, `prior_state` |
+| `CONTROL_COMPENSATED` | Compensate the latest reversible control event. | `reason`, `target_event_id`, `prior_state` |
+
+The bounded `disposition` vocabulary is `DEMO_ALLOW` and `DEMO_DECLINE`.
+These labels are demonstrably synthetic and are not real approval or rejection wording.
+
+**Derived control state.** `control_state` is a deterministic projection of the original decision outcome plus the ordered control events; it is never stored as a mutable column.
+
+| Derived state | Established by | Permitted control command |
+| --- | --- | --- |
+| `AUTO_APPROVED` | `DECISION_RECORDED` with `TMP-AUT-01`. | None. |
+| `AWAITING_INPUT` | Decision outcome `MISSING_FACT`. | `pause`. |
+| `AWAITING_REVIEW` | Decision outcome `OUT_OF_POLICY` or `AUTHORITY_EXCEEDED`. | `pause`, `record_demo_review`. |
+| `PAUSED` | Latest active `CASE_PAUSED`. | `resume`, `undo`. |
+| `DEMO_REVIEWED` | Latest active `DEMO_REVIEW_RECORDED`. | `undo`. |
+
+**Guard.** A pure transition guard accepts only the permitted command for the current state and produces exactly one event draft.
+An illegal transition returns conflict (`ILLEGAL_CONTROL_ACTION`, 409) and creates no event or state effect.
+A reviewer cannot approve a `MISSING_FACT` case; its repair question stays visible.
+
+**Idempotency.** A command may carry a non-empty `idempotency_key` of at most 255 characters and persists a canonical `command_fingerprint` on its appended event.
+Neither the key nor the mandatory non-blank `reason` may contain a NUL character because both are persisted in the control event.
+A partial unique index on `(trace_id, idempotency_key)` makes a reused key race-safe.
+The same key with the same fingerprint returns the saved result without a second effect; the same key with a different fingerprint returns `CONTROL_IDEMPOTENCY_CONFLICT` (409).
+
+**Undo / compensation.** `undo` compensates only the latest still-reversible control event once and restores its recorded `prior_state` by appending a `CONTROL_COMPENSATED` event.
+It never updates or deletes the target event or the original snapshots.
+A repeated or older undo returns conflict.
+
+**API.** `POST /api/temporary/decision-traces/{trace_id}/controls` accepts `{command, reason, disposition?, idempotency_key?}` and returns the derived trace view with `control_state`.
+`GET /api/temporary/decision-traces/{trace_id}` also returns the derived `control_state` from stored events without calling the normalizer or evaluator.
+Errors reuse the temporary envelope; malformed commands return `INPUT_INVALID` (422), missing traces `TRACE_NOT_FOUND` (404), and illegal transitions or key reuse `ILLEGAL_CONTROL_ACTION` or `CONTROL_IDEMPOTENCY_CONFLICT` (409).
+
+**Disclosure and provenance.** Every control response and stored control event retains the `TEMPORARY_DEVELOPMENT`, `SYNTHETIC`, `UNVALIDATED`, and `TMP-DEV-001` markers plus the temporary notice.
+The operational `/health` response stays unchanged and exempt.
+
+**Non-goals for the first slice.** Global pause, real approval/rejection wording, payment side effects, reviewer assignment queues, authentication or RBAC, notifications, missing-fact repair, and any command against an `AUTO_APPROVED` outcome are excluded.
+
 ## 8. Explicitly deferred
 
-- Human decision points: pause, approve, reject, override, undo, reviewer queues, login, and role-based access control.
+- Real human decision points and authority: real approval, rejection, override, reviewer queues, login, and role-based access control. The temporary Control Deck above is a synthetic demo mechanic, not a human or policy authority.
 - Evidence upload, storage, OCR, receipt inspection, or verification.
 - Real workflow migration.
 

@@ -13,6 +13,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.schemas.temporary_history import ErrorBody, ErrorResponse, ProvenanceReadModel
+from app.application.control_deck import (
+    ControlIdempotencyConflictError,
+    IllegalControlActionError,
+)
 from app.application.temporary_history import (
     TEMPORARY_NOTICE,
     TraceAlreadyRecordedError,
@@ -23,6 +27,8 @@ from app.policy.profile import TMP_DEV_001_PROFILE
 _INPUT_INVALID_CODE = "INPUT_INVALID"
 _CASE_ID_ALREADY_RECORDED_CODE = "CASE_ID_ALREADY_RECORDED"
 _TRACE_NOT_FOUND_CODE = "TRACE_NOT_FOUND"
+_ILLEGAL_CONTROL_ACTION_CODE = "ILLEGAL_CONTROL_ACTION"
+_CONTROL_IDEMPOTENCY_CONFLICT_CODE = "CONTROL_IDEMPOTENCY_CONFLICT"
 
 
 def _response(
@@ -61,6 +67,28 @@ def register_exception_handlers(application: FastAPI) -> None:
             404,
             _TRACE_NOT_FOUND_CODE,
             f"No temporary trace exists for trace_id {exc.trace_id!r}.",
+        )
+
+    @application.exception_handler(IllegalControlActionError)
+    async def _illegal_control_action(
+        _request: Request, exc: IllegalControlActionError
+    ) -> JSONResponse:
+        return _response(
+            409,
+            _ILLEGAL_CONTROL_ACTION_CODE,
+            f"Control command {exc.command!r} is illegal for trace {exc.trace_id!r} "
+            f"in state {exc.state!r}.",
+        )
+
+    @application.exception_handler(ControlIdempotencyConflictError)
+    async def _control_idempotency_conflict(
+        _request: Request, exc: ControlIdempotencyConflictError
+    ) -> JSONResponse:
+        return _response(
+            409,
+            _CONTROL_IDEMPOTENCY_CONFLICT_CODE,
+            f"The idempotency key {exc.idempotency_key!r} was already used for a "
+            f"different command on trace {exc.trace_id!r}.",
         )
 
     @application.exception_handler(RequestValidationError)

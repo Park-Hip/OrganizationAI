@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.domain.control import ControlCommand, DemoDisposition
 
@@ -20,13 +20,15 @@ class ControlCommandRequest(BaseModel):
     command: ControlCommand
     reason: str
     disposition: DemoDisposition | None = None
-    idempotency_key: str | None = None
+    idempotency_key: str | None = Field(default=None, max_length=255)
 
     @field_validator("reason")
     @classmethod
     def _require_non_blank_reason(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("reason must not be blank")
+        if "\x00" in value:
+            raise ValueError("reason must not contain NUL characters")
         return value
 
     @field_validator("idempotency_key")
@@ -34,6 +36,8 @@ class ControlCommandRequest(BaseModel):
     def _require_non_blank_key(cls, value: str | None) -> str | None:
         if value is not None and not value.strip():
             raise ValueError("idempotency_key must not be blank")
+        if value is not None and "\x00" in value:
+            raise ValueError("idempotency_key must not contain NUL characters")
         return value
 
     @model_validator(mode="after")

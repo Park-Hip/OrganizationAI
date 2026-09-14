@@ -32,19 +32,14 @@ class AuditActorType(str, Enum):  # noqa: UP042
     """Technical actor labels. None claims a real human or authority role."""
 
     SYSTEM = "SYSTEM"
-    DEMO_REVIEWER = "DEMO_REVIEWER"
 
 
 class AuditAction(str, Enum):  # noqa: UP042
-    """Actions recorded by submitted traces and later synthetic controls."""
+    """Actions recorded by the initial system event chain."""
 
     CASE_RECEIVED = "CASE_RECEIVED"
     CASE_NORMALIZED = "CASE_NORMALIZED"
     DECISION_RECORDED = "DECISION_RECORDED"
-    CASE_PAUSED = "CASE_PAUSED"
-    CASE_RESUMED = "CASE_RESUMED"
-    DEMO_REVIEW_RECORDED = "DEMO_REVIEW_RECORDED"
-    CONTROL_COMPENSATED = "CONTROL_COMPENSATED"
 
 
 class TemporaryCaseSnapshot(Base):

@@ -130,6 +130,9 @@ def test_post_control_idempotency_conflict_returns_409_envelope(
     [
         _body(command="dispatch"),  # unknown command token
         _body(reason="   "),  # blank reason
+        _body(reason="synthetic\u0000reason"),
+        _body(idempotency_key="x" * 256),
+        _body(idempotency_key="key\u0000one"),
         _body(reason="synthetic reason", actor="DEMO_REVIEWER"),  # unapproved actor field
         _body(reason="synthetic reason", profile_id="TMP-DEV-001"),
         _body(reason="synthetic reason", disposition="DEMO_ALLOW"),  # disposition without review

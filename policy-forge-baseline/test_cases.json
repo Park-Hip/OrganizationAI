@@ -1,0 +1,95 @@
+{
+  "suite_id": "REIMB-POLICY-1.1.0",
+  "policy_version": "1.1.0",
+  "data_classification": "SYNTHETIC_ONLY",
+  "defaults": {
+    "currency": "VND",
+    "routine_processing_max_vnd": 5000000,
+    "authority_operator": "greater_than",
+    "non_cash_threshold_vnd": 5000000,
+    "tax_regime_applies": false,
+    "submission_deadline_business_days": 10
+  },
+  "cases": [
+    {
+      "id": "TC-R01", "group": "ROUTINE", "title": "Chi hộ in ấn thường quy",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 850000, "budget_remaining_vnd": 2000000, "category": "printing", "documents": "COMPLETE_VERIFIED", "payment_method": "BANK_TRANSFER", "duplicate_check": "CLEAR", "days_late": 0, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 850000, "triggered_rule_ids": ["RULE-ROUTINE-001"]}
+    },
+    {
+      "id": "TC-R02", "group": "ROUTINE", "title": "Quyết toán tạm ứng còn thừa",
+      "input": {"flow_type": "ADVANCE_SETTLEMENT", "advance_amount_vnd": 3000000, "total_vnd": 2400000, "budget_remaining_vnd": 4000000, "category": "supplies", "documents": "COMPLETE_VERIFIED", "duplicate_check": "CLEAR", "days_late": 2, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 2400000, "amount_to_return_vnd": 600000, "additional_payment_vnd": 0, "triggered_rule_ids": ["RULE-CALC-001", "RULE-ROUTINE-001"]}
+    },
+    {
+      "id": "TC-R03", "group": "ROUTINE", "verify": true, "title": "Biên dưới ngưỡng 4.999.999 đồng",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 4999999, "budget_remaining_vnd": 7000000, "category": "venue", "documents": "COMPLETE_VERIFIED", "payment_method": "BANK_TRANSFER", "duplicate_check": "CLEAR", "days_late": 1, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 4999999, "triggered_rule_ids": ["RULE-ROUTINE-001"]}
+    },
+    {
+      "id": "TC-R04", "group": "ROUTINE", "verify": true, "title": "Đúng ngưỡng 5.000.000 đồng",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 5000000, "budget_remaining_vnd": 8000000, "category": "approved_service", "documents": "COMPLETE_VERIFIED", "payment_method": "BANK_TRANSFER", "non_cash_evidence": true, "duplicate_check": "CLEAR", "days_late": 0, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 5000000, "triggered_rule_ids": ["RULE-ROUTINE-001"], "note": "Ngưỡng xử lý thường quy dùng toán tử >; bằng ngưỡng vẫn lập gói để con người phê duyệt."}
+    },
+    {
+      "id": "TC-R05", "group": "ROUTINE", "title": "Quyết toán cần thanh toán bổ sung",
+      "input": {"flow_type": "ADVANCE_SETTLEMENT", "advance_amount_vnd": 1200000, "total_vnd": 1500000, "budget_remaining_vnd": 2000000, "category": "transport", "documents": "COMPLETE_VERIFIED", "duplicate_check": "CLEAR", "days_late": 3, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 1500000, "amount_to_return_vnd": 0, "additional_payment_vnd": 300000, "triggered_rule_ids": ["RULE-CALC-001", "RULE-ROUTINE-001"]}
+    },
+    {
+      "id": "TC-R06", "group": "ROUTINE", "verify": true, "title": "Nhiều dòng hợp lệ trong ngân sách",
+      "input": {"flow_type": "MEMBER_PAID", "items_vnd": [650000, 420000, 330000], "total_vnd": 1400000, "budget_remaining_vnd": 2500000, "categories": ["printing", "supplies", "communication"], "documents": "COMPLETE_VERIFIED", "duplicate_check": "CLEAR", "days_late": 4, "conflict": false},
+      "expected": {"processing_result": "ROUTINE_PROCESSED", "escalation_type": null, "approval_status": "PENDING_HUMAN_APPROVAL", "eligible_total_vnd": 1400000, "triggered_rule_ids": ["RULE-ROUTINE-001"]}
+    },
+    {
+      "id": "TC-F01", "group": "FACT_UNKNOWN", "verify": true, "title": "Hóa đơn mờ",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 900000, "document_readable": false, "ocr_confidence": 0.43, "duplicate_check": "NOT_RUN"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "FACT_UNKNOWN", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-FACT-001"], "question_contains": ["TC-F01", "hóa đơn", "900.000", "tải lại", "PDF hoặc ảnh rõ"]}
+    },
+    {
+      "id": "TC-F02", "group": "FACT_UNKNOWN", "title": "Thiếu bằng chứng thanh toán",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 1750000, "documents": "INVOICE_ONLY", "requester_payment_proof": false},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "FACT_UNKNOWN", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-DOC-001"], "question_contains": ["1.750.000", "bằng chứng thanh toán", "tải lên"]}
+    },
+    {
+      "id": "TC-F03", "group": "FACT_UNKNOWN", "title": "Bảng kê chênh với chứng từ",
+      "input": {"flow_type": "ADVANCE_SETTLEMENT", "advance_amount_vnd": 2500000, "declared_total_vnd": 2100000, "evidence_total_vnd": 1950000, "documents": "READABLE"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "FACT_UNKNOWN", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-FACT-002"], "question_contains": ["150.000", "bảng kê", "chứng từ", "xác nhận"]}
+    },
+    {
+      "id": "TC-O01", "group": "OUT_OF_POLICY", "title": "Đồ uống có cồn",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 1200000, "category": "alcohol", "documents": "COMPLETE_VERIFIED", "exception_approval": false},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "OUT_OF_POLICY", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-CAT-002"], "required_approvers": ["CLUB_CHAIR", "PARENT_ADVISOR"]}
+    },
+    {
+      "id": "TC-O02", "group": "OUT_OF_POLICY", "title": "Mục đích cá nhân không liên quan sự kiện",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 700000, "category": "personal_expense", "approved_event_link": false, "documents": "COMPLETE_VERIFIED"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "OUT_OF_POLICY", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-SCOPE-001"]}
+    },
+    {
+      "id": "TC-O03", "group": "OUT_OF_POLICY", "title": "Thuốc lá thuộc danh mục cấm",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 450000, "category": "tobacco", "documents": "COMPLETE_VERIFIED"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "OUT_OF_POLICY", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-CAT-001"]}
+    },
+    {
+      "id": "TC-A01", "group": "AUTHORITY_REQUIRED", "verify": true, "title": "Biên trên ngưỡng 5.000.001 đồng",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 5000001, "budget_remaining_vnd": 7000000, "category": "venue", "documents": "COMPLETE_VERIFIED", "payment_method": "BANK_TRANSFER", "duplicate_check": "CLEAR", "conflict": false},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "AUTHORITY_REQUIRED", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-AUTH-001"], "question_contains": ["TC-A01", "5.000.001", "Chủ nhiệm", "phê duyệt hoặc từ chối", "lý do"]}
+    },
+    {
+      "id": "TC-A02", "group": "AUTHORITY_REQUIRED", "title": "Vượt ngân sách còn lại",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 3500000, "budget_remaining_vnd": 3000000, "category": "printing", "documents": "COMPLETE_VERIFIED"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "AUTHORITY_REQUIRED", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-BUDGET-001"], "question_contains": ["500.000", "ngân sách", "điều chỉnh"]}
+    },
+    {
+      "id": "TC-A03", "group": "AUTHORITY_REQUIRED", "title": "Người đề nghị tự phê duyệt",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 1300000, "budget_remaining_vnd": 2000000, "requester_id": "P-001", "proposed_approver_id": "P-001", "documents": "COMPLETE_VERIFIED"},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "AUTHORITY_REQUIRED", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-CONFLICT-001"], "question_contains": ["người phê duyệt độc lập"]}
+    },
+    {
+      "id": "TC-X01", "group": "OUT_OF_POLICY", "title": "Chứng từ trùng đã thanh toán được xác minh",
+      "input": {"flow_type": "MEMBER_PAID", "total_vnd": 980000, "documents": "COMPLETE_VERIFIED", "duplicate_check": "CONFIRMED_PAID", "prior_payment_reference": "PAY-SYN-0007", "suspicion_resolved": true},
+      "expected": {"processing_result": "ESCALATED", "escalation_type": "OUT_OF_POLICY", "approval_status": "PENDING_HUMAN_APPROVAL", "triggered_rule_ids": ["RULE-DUP-002"], "note": "Agent chuyển người có thẩm quyền quyết định; nếu còn nghi vấn phải dùng FACT_UNKNOWN."}
+    }
+  ]
+}

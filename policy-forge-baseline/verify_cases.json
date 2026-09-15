@@ -1,0 +1,25 @@
+{
+  "verify_suite_id": "TASK-A-QUICK-VERIFY-1.1.0",
+  "policy_version": "1.1.0",
+  "source_suite": "test_cases.json",
+  "determinism_key": ["normalized_input_hash", "policy_version", "organization_profile.profile_id"],
+  "cases": [
+    {"case_id": "TC-R03", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
+    {"case_id": "TC-R04", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
+    {"case_id": "TC-R06", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
+    {"case_id": "TC-F01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "FACT_UNKNOWN", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "required_question_facts": ["case_id", "evidence", "known_amount", "requested_action", "response_format", "resume_action"]},
+    {"case_id": "TC-A01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "AUTHORITY_REQUIRED", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "required_question_facts": ["case_id", "amount", "threshold", "approver_role", "approve_or_reject", "reason", "resume_action"]}
+  ],
+  "acceptance": {
+    "routine_processed": {"numerator": 3, "denominator": 3, "required_rate": 1.0},
+    "escalations_detected": {"numerator": 2, "denominator": 2, "required_rate": 1.0},
+    "assertive_conclusion_on_suspected_data": {"required_count": 0},
+    "agent_approval_or_rejection": {"required_count": 0},
+    "question_is_self_contained": true,
+    "repeat_runs_same_result": true,
+    "missed_escalation_rate_formula": "required_escalation_but_routine_processed / total_required_escalations",
+    "unnecessary_escalation_rate_formula": "routine_cases_escalated / total_routine_cases",
+    "expected_missed_escalation_rate": 0.0,
+    "expected_unnecessary_escalation_rate": 0.0
+  }
+}

@@ -10,6 +10,8 @@ from pydantic import ValidationError
 from app.domain.enums import EvidenceStatus, TemporaryCategory
 from app.domain.models import CaseSubmission, Expense, NormalizedCase, TemporaryProfile
 
+pytestmark = pytest.mark.contract
+
 
 def _valid_submission(**overrides: object) -> dict[str, object]:
     data: dict[str, object] = {

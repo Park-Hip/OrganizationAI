@@ -14,6 +14,8 @@ from app.domain.enums import (
 )
 from app.policy.profile import TMP_DEV_001_PROFILE
 
+pytestmark = pytest.mark.contract
+
 
 def test_profile_matches_the_frozen_temporary_policy_exactly() -> None:
     assert TMP_DEV_001_PROFILE.profile_id == "TMP-DEV-001"

@@ -9,8 +9,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+import pytest
+
 from app.domain.enums import DecisionOutcome, TemporaryRuleId
 from app.domain.models import CaseSubmission, DecisionDraft
+
+pytestmark = pytest.mark.legacy
 
 _NO_PAYMENT_REASON = "Approved under temporary development profile; no payment was made."
 

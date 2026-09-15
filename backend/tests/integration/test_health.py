@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 
 from app.api import health as health_module
 
+pytestmark = pytest.mark.integration
+
 
 class _FakeConnection:
     def __enter__(self) -> _FakeConnection:

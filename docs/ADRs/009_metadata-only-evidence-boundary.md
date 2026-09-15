@@ -14,7 +14,7 @@ Introducing a real receipt store or OCR vendor before real-operation configurati
 
 Keep evidence to metadata, hash, and reference only.
 Do not select a receipt store or OCR vendor yet.
-Expose the evidence boundary as an approved adapter to be implemented later behind the same metadata contract.
+Defer all file storage and OCR selection to the real-operation activation gate.
 
 ## Consequences
 

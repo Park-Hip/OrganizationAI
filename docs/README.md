@@ -2,38 +2,50 @@
 
 ## Current status
 
-The participating club's real manual reimbursement workflow is **not yet validated**.
+The project has adopted [the reimbursement workflow baseline](01_manual_reimbursement_workflow.md) derived from Policy Forge v1.1. It defines the workflow to be implemented next; it is not evidence that a real case may be processed yet.
 
-Until it is, the project uses an explicitly synthetic temporary development workflow to build backend mechanics. Temporary documents are not a club policy, financial procedure, user-research finding, or public-demo evidence.
+The current backend still contains legacy synthetic `TMP-DEV-001` behavior while the workflow, MVP, policy, system contract, and corpus transition into implementation. The former temporary source documents have been removed from the working documentation; Git history retains them. Temporary records and endpoints remain synthetic historical material and are not a club policy, financial procedure, user-research finding, or public-demo evidence.
 
 ## Read in this order
 
 1. [00_challenge_a_rubric.md](00_challenge_a_rubric.md) — challenge/scoring reference.
 2. [06_git_collaboration_playbook.md](06_git_collaboration_playbook.md) — required before any branch, commit, or pull request.
-3. Temporary development chain below — the only current source for temporary backend behavior.
+3. [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md) — the project-approved workflow baseline and its real-operation gate.
+4. Implementation-transition chain below — the source for current behavior and the ordered replacement work.
 
-## Temporary development chain
+## Implementation transition chain
 
 | Order | Document | Purpose | Status |
 | --- | --- | --- | --- |
-| 1 | [01_temporary_manual_workflow.md](01_temporary_manual_workflow.md) | Synthetic end-to-end workflow for `TMP-DEV-001`; not a description of the club's manual process. | Temporary |
-| 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Empty placeholder for the future MVP definition after workflow validation. | Placeholder |
-| 3 | [03_temporary_demo_policy.md](03_temporary_demo_policy.md) | Explicit synthetic decision rules for `TMP-DEV-001`; not a pilot policy. | Temporary |
-| 4 | [04_temporary_system_contract.md](04_temporary_system_contract.md) | Frozen temporary vocabulary, record shapes, profile, Layer 1 normalization, Layer 2 evaluation, decision-history persistence, and the temporary Control Deck; not a future public API. | Temporary |
-| 5 | [05_temporary_case_corpus.csv](05_temporary_case_corpus.csv) | Six synthetic fixtures covering every temporary outcome and the inclusive authority boundary. | Temporary |
+| 1 | [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md) | Project-approved reimbursement workflow baseline derived from Policy Forge v1.1. Real-operation activation remains conditional on its checklist. | Current workflow baseline |
+| 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Draft MVP scope for a deterministic reimbursement packet, structured escalation, human approval boundary, and audit history. | Draft — awaiting team review |
+| 3 | [03_reimbursement_policy.md](03_reimbursement_policy.md) | Project-approved Policy Forge v1.1 baseline: versioned profile, deterministic rules, structured escalation, human-approval boundary, and audit controls. | Current policy baseline |
+| 4 | [04_reimbursement_system_contract.md](04_reimbursement_system_contract.md) | Draft contract for the versioned reimbursement case, organization profile, deterministic processing, escalation, audit, authorization, and `TMP-DEV-001` migration boundary. | Draft — awaiting team review |
+| 5 | [05_reimbursement_case_corpus.md](05_reimbursement_case_corpus.md) | Draft manifest for the 16 Policy Forge synthetic cases and five-case Verify suite. | Draft — awaiting team review |
 
-The temporary Control Deck described in document 04 is a synthetic, labelled demo mechanic on top of stored `TMP-DEV-001` traces (`DEMO_REVIEWER`, `pause`/`resume`/`record_demo_review`/`undo`).
-It never claims a real human authority, authentication, or a payment side effect.
+## Legacy temporary implementation
+
+The current backend still contains legacy synthetic `TMP-DEV-001` behavior. Its temporary workflow, policy, system contract, and corpus were removed from the working documentation during this transition and remain retrievable from Git history. That legacy behavior is not the current reimbursement-policy baseline and must not be extended as though it were one.
+
+Stored `TMP-DEV-001` records and endpoints remain synthetic historical material. They never claim a real human authority, authentication, or a payment side effect.
 
 ## Retired legacy documents
 
 The former product specification, proposed policy, contract, corpus, research plan, evidence map, runbook, logs, storyboard, roles, and preparation roadmap are preserved in [retired/](retired/). They are historical material only and must not be treated as the current source of truth.
 
+## Architecture
+
+- [07_architecture.md](07_architecture.md) — system context, layer boundaries, data-flow diagrams, and the append-only persistence schema.
+
+## Architectural Decision Records
+
+- [ADRs/README.md](ADRs/README.md) — index of all ADRs with templates for adding new ones.
+
 ## Documentation rules
 
 - Follow [06_git_collaboration_playbook.md](06_git_collaboration_playbook.md) for every branch, commit, and pull request.
-- Use the temporary development chain only to implement/test synthetic backend behavior.
+- Do not extend legacy `TMP-DEV-001` behavior as though it were the reimbursement-policy baseline; preserve it only as synthetic historical material until its endpoints are retired.
 - Mark every temporary record, result, and business-operation UI/API response with its synthetic/unvalidated provenance. The operational `/health` readiness response is exempt and retains its minimal status/database contract.
 - Do not copy `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` into a real club policy.
 - Do not place real personal, financial, receipt, vendor, or bank data in committed artifacts.
-- When a teammate validates the real workflow, replace the temporary chain in a controlled migration: manual workflow → MVP specification → pilot policy → system contract → case corpus.
+- Complete the controlled migration in this order: manual workflow → MVP specification → pilot policy → system contract → case corpus. Revise implementation, tests, API wording, and UI together only after those documents are aligned.

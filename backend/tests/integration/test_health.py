@@ -1,4 +1,4 @@
-"""Integration tests for the health endpoint."""
+"""Unit tests for the health endpoint."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from app.api import health as health_module
 
-pytestmark = pytest.mark.integration
+pytestmark = pytest.mark.unit
 
 
 class _FakeConnection:

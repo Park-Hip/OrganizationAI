@@ -139,7 +139,7 @@ Until SETUP-04 merges, the named setup owner changes these shared paths only thr
 
 ### Setup and lane ownership
 
-Each setup PR and each post-setup lane has one accountable owner and one owned directory boundary, recorded in the SETUP-01 issue set and planned as GitHub issues:
+Each setup PR and each post-setup lane has one accountable owner and one owned directory boundary, recorded as GitHub issues in the SETUP-01 issue set (external to the repository):
 
 | Item | Branch | Owner | Owned paths |
 | --- | --- | --- | --- |

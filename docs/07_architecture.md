@@ -1,6 +1,6 @@
 # 07 — Reimbursement Architecture
 
-**Status:** Draft target architecture — not implemented by the current legacy `TMP-DEV-001` backend.
+**Status:** Adopted target architecture for the reimbursement v1 synthetic pilot - not implemented by the current legacy `TMP-DEV-001` backend.
 
 **Applies to:** [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md), [02_MVP_Spec.md](02_MVP_Spec.md), [03_reimbursement_policy.md](03_reimbursement_policy.md), [04_reimbursement_system_contract.md](04_reimbursement_system_contract.md), and [05_reimbursement_case_corpus.md](05_reimbursement_case_corpus.md).
 
@@ -114,6 +114,41 @@ The target persistence design is conceptual; concrete table and endpoint names b
 | **Evidence reference** | Evidence ID, type, hash, readability/verification metadata, and retention/access metadata; never a real receipt in this repository. |
 
 The store must reject mutation or deletion of snapshots/events on normal paths. It must make duplicate submission and control/idempotency behavior safe under concurrency.
+
+## v1 implementation seams and shared-file locks
+
+### Seam agreement
+
+The following boundaries are frozen for the reimbursement v1 path and are recorded in ADR-006 through ADR-011:
+
+- The server owns actor identity, timestamps, identifiers, hashes, profile snapshots, and policy snapshots. A client cannot supply or choose any of these server-owned fields.
+- `ROUTINE_PROCESSED` means a review packet was prepared; it is never a human approval, payment instruction, or settlement confirmation.
+- There is no legacy conversion and no dual write. `TMP-DEV-001` records remain labelled synthetic history, and the v1 path is a separate versioned contract.
+
+### Shared-file locks
+
+Until SETUP-04 merges, the named setup owner changes these shared paths only through the serial setup PRs:
+
+| Locked path | Changed by |
+| --- | --- |
+| `backend/app/main.py` | Integration/seam owner (SETUP-04 or a later coordinated integration PR) |
+| `backend/tests/conftest.py` | Test/infrastructure owner (SETUP-03) |
+| `backend/pyproject.toml` | Test/infrastructure owner (SETUP-03), narrowly scoped |
+| `.github/workflows/` | Test/infrastructure owner (SETUP-03) |
+| `backend/alembic/versions/` | Persistence owner, exactly one scheduled revision at a time |
+
+### Setup and lane ownership
+
+Each setup PR and each post-setup lane has one accountable owner and one owned directory boundary, recorded in the SETUP-01 issue set and planned as GitHub issues:
+
+| Item | Branch | Owner | Owned paths |
+| --- | --- | --- | --- |
+| SETUP-02 | `docs/reimbursement-v1-contract-and-corpus` | Policy/contract owner | `policy-forge-baseline/`, `backend/tests/contract/reimbursement_v1/` |
+| SETUP-03 | `test/legacy-regression-and-v1-contract-gates` | Test/infrastructure owner | `backend/tests/fixtures/legacy_tmp_dev_001/`, `.github/workflows/`, `backend/pyproject.toml` |
+| SETUP-04 | `feat/reimbursement-v1-contract-seams` | Integration/seam owner | v1 packages under `backend/app/domain/reimbursement/`, `backend/app/policy/reimbursement/`, `backend/app/application/reimbursements/`, `backend/app/persistence/reimbursements/`, `backend/app/security/` |
+| Lane A | `feat/reimbursement-policy-engine` | Policy owner | `backend/app/policy/reimbursement/`, `backend/tests/unit/reimbursement_v1/policy/` |
+| Lane B | `feat/reimbursement-identity-authorization` | Security owner | `backend/app/security/` |
+| Lane C | `feat/reimbursement-v1-persistence` | Persistence owner | `backend/app/persistence/reimbursements/` |
 
 ## Legacy migration boundary
 

@@ -18,10 +18,10 @@ The current backend still contains legacy synthetic `TMP-DEV-001` behavior while
 | Order | Document | Purpose | Status |
 | --- | --- | --- | --- |
 | 1 | [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md) | Project-approved reimbursement workflow baseline derived from Policy Forge v1.1. Real-operation activation remains conditional on its checklist. | Current workflow baseline |
-| 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Draft MVP scope for a deterministic reimbursement packet, structured escalation, human approval boundary, and audit history. | Draft — awaiting team review |
+| 2 | [02_MVP_Spec.md](02_MVP_Spec.md) | Draft MVP scope for a deterministic reimbursement packet, structured escalation, human approval boundary, and audit history. | Adopted (synthetic pilot) |
 | 3 | [03_reimbursement_policy.md](03_reimbursement_policy.md) | Project-approved Policy Forge v1.1 baseline: versioned profile, deterministic rules, structured escalation, human-approval boundary, and audit controls. | Current policy baseline |
-| 4 | [04_reimbursement_system_contract.md](04_reimbursement_system_contract.md) | Draft contract for the versioned reimbursement case, organization profile, deterministic processing, escalation, audit, authorization, and `TMP-DEV-001` migration boundary. | Draft — awaiting team review |
-| 5 | [05_reimbursement_case_corpus.md](05_reimbursement_case_corpus.md) | Draft manifest for the 16 Policy Forge synthetic cases and five-case Verify suite. | Draft — awaiting team review |
+| 4 | [04_reimbursement_system_contract.md](04_reimbursement_system_contract.md) | Draft contract for the versioned reimbursement case, organization profile, deterministic processing, escalation, audit, authorization, and `TMP-DEV-001` migration boundary. | Adopted (synthetic pilot) |
+| 5 | [05_reimbursement_case_corpus.md](05_reimbursement_case_corpus.md) | Draft manifest for the 16 Policy Forge synthetic cases and five-case Verify suite. | Adopted (synthetic pilot) |
 
 ## Legacy temporary implementation
 

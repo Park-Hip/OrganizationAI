@@ -2,7 +2,7 @@
 
 ## Document control
 
-**Status:** Draft system contract — approved structural direction; awaiting team review before implementation.
+**Status:** Adopted system contract - frozen for the reimbursement v1 synthetic pilot; real-operation activation remains conditional on [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md).
 
 **Depends on:**
 
@@ -13,6 +13,8 @@
 **Canonical machine-readable schema:** [policy-forge-baseline/reimbursement.schema.json](../policy-forge-baseline/reimbursement.schema.json).
 
 **Purpose:** Freeze the versioned data shapes, invariants, deterministic processing boundary, escalation handoff, audit requirements, and migration boundary for reimbursement processing. The policy document owns rule conditions and priorities; this contract owns how systems represent and preserve those decisions.
+
+**Adopted decisions:** [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md) (public/private boundary and vocabulary mapping), [ADR-007](ADRs/007_versioned-fixture-input-schema.md) (fixture expansion), [ADR-008](ADRs/008_oidc-identity-adapter.md) (identity adapter), [ADR-009](ADRs/009_metadata-only-evidence-boundary.md) (metadata-only evidence), [ADR-010](ADRs/010_alcohol-escalation-ownership.md) (alcohol handoff), and [ADR-011](ADRs/011_relocate-legacy-regression-fixture.md) (legacy regression fixture).
 
 ## 1. Contract invariants
 
@@ -134,6 +136,12 @@ Every escalation has all of the following required fields:
 | `specific_question` | One concrete, answerable question; not a generic request to “check.” |
 | `response_format` | The required evidence, choice, or response shape. |
 | `resume_action` | The rule or processing action to run after a valid response. |
+
+### 5.3 Public Verify vocabulary and alcohol handoff
+
+The later public Verify boundary maps competition-rubric terms to these internal enums without renaming them repository-wide: `MISSING_FACT` maps to `FACT_UNKNOWN`, and `AUTHORITY_EXCEEDED` maps to `AUTHORITY_REQUIRED`. See [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md).
+
+For the synthetic prototype, alcohol escalations address `CLUB_CHAIR` as the single addressee, and the required `PARENT_ADVISOR` consultation is an auditable prerequisite rather than a second agent decision. See [ADR-010](ADRs/010_alcohol-escalation-ownership.md).
 
 ## 6. Audit and operational-control contracts
 

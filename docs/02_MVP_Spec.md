@@ -2,13 +2,15 @@
 
 ## Document control
 
-**Status:** Draft MVP specification — awaiting team review before implementation.
+**Status:** Adopted MVP specification - frozen for the reimbursement v1 synthetic pilot; real-operation activation remains conditional on the checklist in [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md).
 
 **Depends on:** [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md).
 
 **Policy sources:** [Policy Forge reimbursement policy](../policy-forge-baseline/Policy_Hoan_Ung_CLB.md), [policy rules](../policy-forge-baseline/policy_rules.yaml), [reimbursement schema](../policy-forge-baseline/reimbursement.schema.json), and the associated synthetic cases.
 
 **Purpose:** Define the smallest product slice that prepares an auditable reimbursement packet and routes uncertainty to an authorized human. It does not approve, reject, or transfer money.
+
+**Adopted decisions:** [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md) (synthetic pilot and public/private boundary), [ADR-008](ADRs/008_oidc-identity-adapter.md) (OIDC adapter with synthetic test identities), [ADR-009](ADRs/009_metadata-only-evidence-boundary.md) (metadata-only evidence), and [ADR-010](ADRs/010_alcohol-escalation-ownership.md) (alcohol handoff).
 
 ## 1. Product statement
 

@@ -2,7 +2,7 @@
 
 ## Document control
 
-**Status:** Draft corpus manifest — awaiting team review before implementation.
+**Status:** Adopted corpus manifest - frozen for the reimbursement v1 synthetic pilot; all fixtures remain synthetic until the real-operation gate in [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md) is complete.
 
 **Depends on:**
 
@@ -18,6 +18,8 @@
 
 **Purpose:** Define the synthetic policy cases that every reimbursement implementation must evaluate consistently. The JSON fixtures are canonical; this document is their human-readable manifest and acceptance contract.
 
+**Adopted decisions:** [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md) (public Verify boundary and vocabulary mapping), [ADR-007](ADRs/007_versioned-fixture-input-schema.md) (fixture expansion), and [ADR-011](ADRs/011_relocate-legacy-regression-fixture.md) (legacy fixture separation).
+
 ## 1. Corpus boundary
 
 All corpus data is synthetic. It contains no real person, vendor, account, receipt, transaction, or payment information.
@@ -25,6 +27,8 @@ All corpus data is synthetic. It contains no real person, vendor, account, recei
 The corpus tests the Policy Forge v1.1 reimbursement policy. It is not a record of real club decisions, a source of real configuration, or authorization to process a payment.
 
 Implementations must use the full synthetic suite for regression tests and the five-case Verify suite for a concise demonstration of deterministic processing and safe escalation.
+
+Each concise scenario fixture expands deterministically into a full reimbursement envelope through a data-driven expander; the expander never branches on fixture ID, title, or free text. See [ADR-007](ADRs/007_versioned-fixture-input-schema.md).
 
 ## 2. Full policy suite
 

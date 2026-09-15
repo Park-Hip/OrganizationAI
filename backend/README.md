@@ -99,22 +99,24 @@ The markers are defined in `pyproject.toml`.
 Run the whole non-database suite with one command:
 
 ```bash
-uv run pytest
+uv run pytest -m "not integration"
 ```
 
 This is the normal local loop and is the command the repository requires as its green baseline.
 On Windows the same run is available directly from the created virtual environment:
 
 ```powershell
-.venv\Scripts\python.exe -m pytest -q
+.venv\Scripts\python.exe -m pytest -m "not integration" -q
 ```
 
 ### Expected pass and skip behavior
 
-`uv run pytest` is green locally apart from a small number of intentional skips.
-The integration tests skip with a message naming `TEST_DATABASE_URL` whenever the isolated test database is not configured.
+The non-database baseline does not collect integration tests and is green when its selected tests pass.
+`uv run pytest -m integration` skips with a message naming `TEST_DATABASE_URL` whenever the isolated test database is not configured.
 They run, rather than skip, only after `test-db` is started and `TEST_DATABASE_URL` is exported.
 A skip is reported clearly and is never presented as a pass.
+The `v1_contract` command has no selected tests until SETUP-02 adds `tests/contract/reimbursement_v1/`.
+CI intentionally fails its v1 source-contract job while that directory is absent, so the setup sequencing cannot be mistaken for successful validation.
 
 ### Failure triage
 
@@ -126,8 +128,8 @@ Formatting, lint, and type failures are the first CI checks; reproduce them loca
 
 ### Continuous integration
 
-The `.github/workflows/ci.yml` workflow runs four separately reported jobs on every pull request:
-`quality` (format, lint, type), `test-legacy` (legacy unit and contract tests), `v1-contract` (v1 source-contract validation), and `integration` (Postgres-backed tests against a synthetic-only database service).
+The `.github/workflows/ci.yml` workflow runs six separately reported jobs on every pull request:
+`quality` (format, lint, type), `test-legacy` (legacy regressions), `test-unit` (unit tests), `test-contract` (frozen contract tests), `v1-contract` (v1 source-contract validation), and `integration` (Postgres-backed tests against a synthetic-only database service).
 These job names become the required status checks once the workflow is shown green on the setup branch.
 
 ## What this foundation proves

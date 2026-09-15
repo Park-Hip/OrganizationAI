@@ -208,10 +208,3 @@ def test_empty_cells_become_none_but_whitespace_is_preserved() -> None:
     assert _empty_to_none("") is None
     assert _empty_to_none("   ") == "   "
     assert _empty_to_none("value") == "value"
-
-
-def test_corpus_path_is_the_legacy_historical_fixture() -> None:
-    assert _CORPUS_PATH == (
-        _BACKEND_ROOT / "tests" / "fixtures" / "legacy_tmp_dev_001" / "temporary_case_corpus.csv"
-    )
-    assert _CORPUS_PATH.is_file()

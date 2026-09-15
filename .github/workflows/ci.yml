@@ -41,7 +41,7 @@ jobs:
         run: uv run mypy app tests
 
   test-legacy:
-    name: Legacy unit and contract tests
+    name: Legacy regression tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -58,8 +58,50 @@ jobs:
 
       - run: uv sync
 
-      - name: Run legacy unit and contract tests
-        run: uv run pytest -m "not integration and not v1_contract" -q
+      - name: Run legacy regression tests
+        run: uv run pytest -m legacy -q
+
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run unit tests
+        run: uv run pytest -m unit -q
+
+  test-contract:
+    name: Frozen contract tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run frozen contract tests
+        run: uv run pytest -m contract -q
 
   v1-contract:
     name: Reimbursement v1 source-contract validation
@@ -81,11 +123,11 @@ jobs:
 
       - name: Run v1 source-contract validation
         run: |
-          if [ -d tests/contract/reimbursement_v1 ]; then
-            uv run pytest tests/contract/reimbursement_v1 -q
-          else
-            echo "No reimbursement v1 source-contract tests are present in this revision."
+          if [ ! -d tests/contract/reimbursement_v1 ]; then
+            echo "Reimbursement v1 source-contract tests are required after SETUP-02 merges."
+            exit 1
           fi
+          uv run pytest tests/contract/reimbursement_v1 -q
 
   integration:
     name: Database integration tests

@@ -12,7 +12,7 @@ Only the policy evaluator produces the complete evaluated envelope with `process
 ## 1. Invariants
 
 1. Expansion is deterministic. The same concise input always produces the same input snapshot.
-2. Expansion never depends on the fixture id, title, group, note, or free-text `purpose`. `task_or_event` is a structural event identifier. Two fixtures with identical structural input and different metadata or purpose expand to byte-identical input snapshots.
+2. Expansion never depends on the fixture id, title, group, note, or free-text `purpose`. `task_or_event` is a structural event identifier. Two fixtures with identical structural input and different metadata or purpose have identical generated identifiers and input snapshots that differ only in the copied `case.purpose`.
 3. The expander optionally applies only the data-driven field mappings below. It never hard-codes a category price, a real profile value, a real person, or an organization decision.
 4. Structural inputs that fail [reimbursement-fixture.schema.json](reimbursement-fixture.schema.json) are rejected before expansion. The expander never silently reinterprets malformed input.
 5. A valid structural input that describes missing, unreadable, conflicting, or unknown business facts expands into a structurally valid case whose flags represent those facts. The policy engine, not the expander, is responsible for turning them into an escalation.

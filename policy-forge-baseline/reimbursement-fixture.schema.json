@@ -41,6 +41,49 @@
     {
       "if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}, "required": ["flow_type"]},
       "then": {"not": {"required": ["advance_amount_vnd"]}}
+    },
+    {
+      "if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}, "required": ["flow_type"]},
+      "then": {"properties": {"evidence": {"not": {"required": ["advance_reference"]}}}}
+    },
+    {
+      "if": {
+        "properties": {
+          "expense": {
+            "properties": {"payment_method": {"const": "CASH"}},
+            "required": ["payment_method"]
+          },
+          "evidence": {
+            "properties": {"non_cash_verified": {"const": true}},
+            "required": ["non_cash_verified"]
+          }
+        },
+        "required": ["expense", "evidence"]
+      },
+      "then": false
+    },
+    {
+      "if": {
+        "properties": {
+          "expense": {
+            "properties": {
+              "items": {
+                "contains": {
+                  "properties": {"payment_method": {"const": "CASH"}},
+                  "required": ["payment_method"]
+                }
+              }
+            },
+            "required": ["items"]
+          },
+          "evidence": {
+            "properties": {"non_cash_verified": {"const": true}},
+            "required": ["non_cash_verified"]
+          }
+        },
+        "required": ["expense", "evidence"]
+      },
+      "then": false
     }
   ],
   "$defs": {

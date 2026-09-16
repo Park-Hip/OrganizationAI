@@ -65,3 +65,54 @@ def test_unknown_missing_fact_is_rejected() -> None:
         "duplicate_check": "CLEAR",
     }
     assert list(_validator().iter_errors(unknown_fact))
+
+
+def test_cash_expenses_cannot_claim_non_cash_verification() -> None:
+    single_line_cash = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "total_vnd": 5000000,
+            "category": "printing",
+            "payment_method": "CASH",
+        },
+        "evidence": {"non_cash_verified": True},
+        "duplicate_check": "CLEAR",
+    }
+    mixed_payment_items = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "items": [
+                {
+                    "vendor": "V-SYN-001",
+                    "transaction_date": "2026-08-01",
+                    "purpose_code": "print",
+                    "category": "printing",
+                    "amount_vnd": 2500000,
+                    "payment_method": "BANK_TRANSFER",
+                },
+                {
+                    "vendor": "V-SYN-002",
+                    "transaction_date": "2026-08-01",
+                    "purpose_code": "print",
+                    "category": "printing",
+                    "amount_vnd": 2500000,
+                    "payment_method": "CASH",
+                },
+            ]
+        },
+        "evidence": {"non_cash_verified": True},
+        "duplicate_check": "CLEAR",
+    }
+
+    assert list(_validator().iter_errors(single_line_cash))
+    assert list(_validator().iter_errors(mixed_payment_items))
+
+
+def test_member_paid_fixture_cannot_include_advance_evidence() -> None:
+    member_paid_with_advance = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {"total_vnd": 850000, "category": "printing"},
+        "evidence": {"advance_reference": "ADV-SYN-001"},
+        "duplicate_check": "CLEAR",
+    }
+    assert list(_validator().iter_errors(member_paid_with_advance))

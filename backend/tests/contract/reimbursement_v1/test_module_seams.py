@@ -20,9 +20,12 @@ from app.domain.reimbursement import (
     ControlState,
     EscalationType,
     Evidence,
+    EvidenceType,
     ExpenseItem,
     FlowType,
+    MaskedReimbursementAccount,
     OrganizationProfile,
+    PaymentMethod,
     PersonRef,
     PolicySnapshot,
     ProcessingOutcome,
@@ -98,34 +101,34 @@ def _member_paid_case(*, paused: bool = False) -> ReimbursementCase:
         approved_budget_vnd=1_000_000,
         remaining_budget_vnd=1_000_000,
         expense_items=(
-            {
-                "line_id": "LINE-001",
-                "vendor": "Synthetic Vendor",
-                "transaction_date": "2026-09-15",
-                "purpose_code": "PRINT",
-                "description": "Synthetic printing",
-                "category": "printing",
-                "amount_vnd": 850_000,
-                "payment_method": "CARD",
-                "evidence_ids": ["EVD-001"],
-                "suspicion_flags": [],
-            },
+            ExpenseItem(
+                line_id="LINE-001",
+                vendor="Synthetic Vendor",
+                transaction_date=date(2026, 9, 15),
+                purpose_code="PRINT",
+                description="Synthetic printing",
+                category="printing",
+                amount_vnd=850_000,
+                payment_method=PaymentMethod.CARD,
+                evidence_ids=("EVD-001",),
+                suspicion_flags=(),
+            ),
         ),
         evidence=(
-            {
-                "evidence_id": "EVD-001",
-                "type": "INVOICE",
-                "file_hash": "sha256-synthetic",
-                "readable": True,
-                "verified": True,
-            },
+            Evidence(
+                evidence_id="EVD-001",
+                type=EvidenceType.INVOICE,
+                file_hash="sha256-synthetic",
+                readable=True,
+                verified=True,
+            ),
         ),
         declared_total_vnd=850_000,
-        reimbursement_account={
-            "account_name": "Synthetic Member",
-            "bank_name": "Synthetic Bank",
-            "masked_account_number": "***0001",
-        },
+        reimbursement_account=MaskedReimbursementAccount(
+            account_name="Synthetic Member",
+            bank_name="Synthetic Bank",
+            masked_account_number="***0001",
+        ),
         paused=paused,
     )
 
@@ -237,28 +240,32 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
         OrganizationProfile.model_validate(profile_payload)
 
     with pytest.raises(ValueError):
-        ExpenseItem(
-            line_id="LINE-001",
-            vendor="Synthetic Vendor",
-            transaction_date=date(2026, 9, 15),
-            purpose_code="PRINT",
-            description="Synthetic printing",
-            category="printing",
-            amount_vnd=True,
-            tax_amount_vnd="0",
-            payment_method="CARD",
-            evidence_ids=("EVD-001",),
-            suspicion_flags=(),
+        ExpenseItem.model_validate(
+            {
+                "line_id": "LINE-001",
+                "vendor": "Synthetic Vendor",
+                "transaction_date": "2026-09-15",
+                "purpose_code": "PRINT",
+                "description": "Synthetic printing",
+                "category": "printing",
+                "amount_vnd": True,
+                "tax_amount_vnd": "0",
+                "payment_method": "CARD",
+                "evidence_ids": ("EVD-001",),
+                "suspicion_flags": (),
+            }
         )
 
     with pytest.raises(ValueError):
-        Evidence(
-            evidence_id="EVD-001",
-            type="INVOICE",
-            file_hash="sha256-synthetic",
-            readable="true",
-            verified="true",
-            amount_vnd=True,
+        Evidence.model_validate(
+            {
+                "evidence_id": "EVD-001",
+                "type": "INVOICE",
+                "file_hash": "sha256-synthetic",
+                "readable": "true",
+                "verified": "true",
+                "amount_vnd": True,
+            }
         )
 
     evidence_payload = {
@@ -272,48 +279,7 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
         with pytest.raises(ValueError):
             Evidence.model_validate(evidence_payload | {"ocr_confidence": ocr_confidence})
 
-    case_payload = ReimbursementCase(
-        case_id="CASE-001",
-        flow_type=FlowType.MEMBER_PAID,
-        requester=PersonRef(person_id="P-001", display_name="Synthetic Member", role="MEMBER"),
-        submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
-        task_or_event="Synthetic event",
-        event_end_date=date(2026, 9, 15),
-        purpose="Synthetic printing",
-        budget_code="BUDGET-001",
-        approved_budget_vnd=1_000_000,
-        remaining_budget_vnd=1_000_000,
-        expense_items=(
-            {
-                "line_id": "LINE-001",
-                "vendor": "Synthetic Vendor",
-                "transaction_date": "2026-09-15",
-                "purpose_code": "PRINT",
-                "description": "Synthetic printing",
-                "category": "printing",
-                "amount_vnd": 850_000,
-                "payment_method": "CARD",
-                "evidence_ids": ["EVD-001"],
-                "suspicion_flags": [],
-            },
-        ),
-        evidence=(
-            {
-                "evidence_id": "EVD-001",
-                "type": "INVOICE",
-                "file_hash": "sha256-synthetic",
-                "readable": True,
-                "verified": True,
-            },
-        ),
-        declared_total_vnd=850_000,
-        reimbursement_account={
-            "account_name": "Synthetic Member",
-            "bank_name": "Synthetic Bank",
-            "masked_account_number": "***0001",
-        },
-        paused=False,
-    ).model_dump()
+    case_payload = _member_paid_case(paused=False).model_dump()
     case_payload.update(
         {
             "approved_budget_vnd": True,

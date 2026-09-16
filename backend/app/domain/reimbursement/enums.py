@@ -6,17 +6,17 @@ no policy implementation, framework, persistence, clock, or I/O dependency.
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class FlowType(str, Enum):  # noqa: UP042
+class FlowType(StrEnum):
     """Supported reimbursement flows."""
 
     MEMBER_PAID = "MEMBER_PAID"
     ADVANCE_SETTLEMENT = "ADVANCE_SETTLEMENT"
 
 
-class EvidenceType(str, Enum):  # noqa: UP042
+class EvidenceType(StrEnum):
     """Metadata-only evidence classifications."""
 
     INVOICE = "INVOICE"
@@ -27,7 +27,7 @@ class EvidenceType(str, Enum):  # noqa: UP042
     OTHER = "OTHER"
 
 
-class PaymentMethod(str, Enum):  # noqa: UP042
+class PaymentMethod(StrEnum):
     """Declared payment methods for an expense line."""
 
     CASH = "CASH"
@@ -37,7 +37,7 @@ class PaymentMethod(str, Enum):  # noqa: UP042
     OTHER = "OTHER"
 
 
-class LineAssessment(str, Enum):  # noqa: UP042
+class LineAssessment(StrEnum):
     """The evaluator's assessment of an expense line."""
 
     PENDING = "PENDING"
@@ -46,7 +46,7 @@ class LineAssessment(str, Enum):  # noqa: UP042
     OUT_OF_POLICY = "OUT_OF_POLICY"
 
 
-class DuplicateCheckState(str, Enum):  # noqa: UP042
+class DuplicateCheckState(StrEnum):
     """The deterministic duplicate-check result supplied to the evaluator."""
 
     CLEAR = "CLEAR"
@@ -55,21 +55,21 @@ class DuplicateCheckState(str, Enum):  # noqa: UP042
     NOT_RUN = "NOT_RUN"
 
 
-class AuthorityThresholdOperator(str, Enum):  # noqa: UP042
+class AuthorityThresholdOperator(StrEnum):
     """Comparison applied to the profile's routine-processing threshold."""
 
     GREATER_THAN = "greater_than"
     GREATER_THAN_OR_EQUAL = "greater_than_or_equal"
 
 
-class ProcessingResult(str, Enum):  # noqa: UP042
+class ProcessingResult(StrEnum):
     """The only agent processing results."""
 
     ROUTINE_PROCESSED = "ROUTINE_PROCESSED"
     ESCALATED = "ESCALATED"
 
 
-class EscalationType(str, Enum):  # noqa: UP042
+class EscalationType(StrEnum):
     """Safe human-handoff categories."""
 
     FACT_UNKNOWN = "FACT_UNKNOWN"
@@ -77,20 +77,20 @@ class EscalationType(str, Enum):  # noqa: UP042
     AUTHORITY_REQUIRED = "AUTHORITY_REQUIRED"
 
 
-class ApprovalStatus(str, Enum):  # noqa: UP042
+class ApprovalStatus(StrEnum):
     """Agent outcomes are always pending a human approval."""
 
     PENDING_HUMAN_APPROVAL = "PENDING_HUMAN_APPROVAL"
 
 
-class ControlState(str, Enum):  # noqa: UP042
+class ControlState(StrEnum):
     """Operational state evaluated before policy rules."""
 
     ACTIVE = "ACTIVE"
     PAUSED = "PAUSED"
 
 
-class AuditActorType(str, Enum):  # noqa: UP042
+class AuditActorType(StrEnum):
     """Actor class recorded on an append-only audit event."""
 
     AGENT = "AGENT"
@@ -98,7 +98,7 @@ class AuditActorType(str, Enum):  # noqa: UP042
     SYSTEM = "SYSTEM"
 
 
-class AuditEventType(str, Enum):  # noqa: UP042
+class AuditEventType(StrEnum):
     """The minimum reimbursement v1 audit-event vocabulary."""
 
     RECEIVED = "RECEIVED"

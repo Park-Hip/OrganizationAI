@@ -78,10 +78,20 @@ def test_expansion_is_deterministic() -> None:
 def test_expansion_binds_generated_identifiers_to_the_full_snapshot() -> None:
     concise = TEST_CASES["cases"][0]["input"]
     current = expand(concise, PROFILE, POLICY_VERSION)
-    different_policy = expand(concise, PROFILE, "1.3.0")
+    different_profile = deepcopy(PROFILE)
+    different_profile["policy_version"] = "1.3.0"
+    different_profile["profile_version"] = "1.3.0"
+    different_policy = expand(concise, different_profile, "1.3.0")
 
     assert current["case"]["case_id"] != different_policy["case"]["case_id"]
     assert current["audit_events"][0]["input_hash"] != different_policy["audit_events"][0]["input_hash"]
+
+
+def test_expansion_rejects_policy_profile_version_mismatch() -> None:
+    concise = TEST_CASES["cases"][0]["input"]
+
+    with pytest.raises(ValueError, match="policy_version"):
+        expand(concise, PROFILE, "1.3.0")
 
 
 def test_expansion_normalizes_defaulted_input_before_hashing() -> None:
@@ -147,6 +157,18 @@ def test_expansion_maps_absent_duplicate_check_to_not_run() -> None:
     envelope = expand(concise, PROFILE, POLICY_VERSION)
 
     assert envelope["case"]["duplicate_check"] == "NOT_RUN"
+
+
+def test_initial_audit_events_follow_submission_time() -> None:
+    concise = deepcopy(TEST_CASES["cases"][0]["input"])
+    concise["submitted_at"] = "2026-10-01T09:00:00Z"
+
+    envelope = expand(concise, PROFILE, POLICY_VERSION)
+
+    assert [event["timestamp"] for event in envelope["audit_events"]] == [
+        "2026-10-01T09:00:00Z",
+        "2026-10-01T09:00:01Z",
+    ]
 
 
 def test_non_cash_payment_proof_uses_non_cash_verification() -> None:

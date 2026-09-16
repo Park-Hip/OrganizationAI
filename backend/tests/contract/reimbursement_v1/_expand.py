@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import json
 from copy import deepcopy
+from datetime import datetime, timedelta
 from typing import Any
 
 import jsonschema
@@ -258,14 +259,21 @@ def _suspicion_flags(concise: dict[str, Any]) -> list[str]:
     return flags
 
 
+def _audit_timestamp(submitted_at: str, seconds_after_submission: int) -> str:
+    timestamp = datetime.fromisoformat(submitted_at.replace("Z", "+00:00"))
+    return (timestamp + timedelta(seconds=seconds_after_submission)).isoformat().replace(
+        "+00:00", "Z"
+    )
+
+
 def _audit_events(
-    digest: str, policy_version: str, paused: bool
+    digest: str, policy_version: str, submitted_at: str, paused: bool
 ) -> list[dict[str, Any]]:
     input_hash = f"sha256-{digest}"
     events: list[dict[str, Any]] = [
         {
             "event_id": f"EVT-{digest[:12]}-RECV",
-            "timestamp": _DEFAULT_SUBMITTED_AT,
+            "timestamp": _audit_timestamp(submitted_at, 0),
             "actor_id": "AGENT",
             "actor_type": "AGENT",
             "policy_version": policy_version,
@@ -276,7 +284,7 @@ def _audit_events(
         },
         {
             "event_id": f"EVT-{digest[:12]}-VAL",
-            "timestamp": "2026-09-10T09:00:01Z",
+            "timestamp": _audit_timestamp(submitted_at, 1),
             "actor_id": "AGENT",
             "actor_type": "AGENT",
             "policy_version": policy_version,
@@ -290,7 +298,7 @@ def _audit_events(
         events.append(
             {
                 "event_id": f"EVT-{digest[:12]}-PAUSE",
-                "timestamp": "2026-09-10T09:00:02Z",
+                "timestamp": _audit_timestamp(submitted_at, 2),
                 "actor_id": "SYSTEM",
                 "actor_type": "SYSTEM",
                 "actor_role": "CLUB_CHAIR",
@@ -305,10 +313,14 @@ def _audit_events(
     return events
 
 
-def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str) -> dict[str, Any]:
+def expand(
+    concise: dict[str, Any], profile: dict[str, Any], policy_version: str
+) -> dict[str, Any]:
     """Expand a concise fixture input into a full input envelope."""
+    if policy_version != profile.get("policy_version"):
+        raise ValueError("policy_version must match organization_profile.policy_version")
     FIXTURE_VALIDATOR.validate(concise)
-    concise = deepcopy(concise)
+    concise = normalize_concise_input(concise)
     flow_type = concise["flow_type"]
     paused = bool(concise.get("paused", False))
     conflict = bool(concise.get("conflict", False))
@@ -386,7 +398,9 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         "organization_profile": profile,
         "case": case,
         "control_state": "PAUSED" if paused else "ACTIVE",
-        "audit_events": _audit_events(digest, policy_version, paused),
+        "audit_events": _audit_events(
+            digest, policy_version, concise["submitted_at"], paused
+        ),
     }
     return envelope
 

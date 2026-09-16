@@ -75,9 +75,15 @@
         "purpose_code": {"type": "string"},
         "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ConciseLine"}}
       },
-      "anyOf": [
-        {"required": ["total_vnd", "category"]},
-        {"required": ["items"]}
+      "oneOf": [
+        {
+          "required": ["total_vnd", "category"],
+          "not": {"required": ["items"]}
+        },
+        {
+          "required": ["items"],
+          "not": {"anyOf": [{"required": ["total_vnd"]}, {"required": ["category"]}]}
+        }
       ]
     },
     "ConciseLine": {

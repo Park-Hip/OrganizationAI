@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 
 import jsonschema
 from _artifacts import POLICY_VERSION, PROFILE, REIMBURSEMENT_SCHEMA, TEST_CASES
@@ -36,8 +37,6 @@ def test_expander_receives_no_fixture_metadata() -> None:
 
 
 def test_expansion_is_independent_of_free_text_prose() -> None:
-    from copy import deepcopy
-
     base = TEST_CASES["cases"][0]["input"]
     changed = dict(base, purpose="Một mục đích hoàn toàn khác", task_or_event="EVT-KHAC")
 
@@ -56,4 +55,63 @@ def test_expansion_is_independent_of_free_text_prose() -> None:
     del structural_b["case"]["purpose"]
     del structural_b["case"]["task_or_event"]
     assert structural_a == structural_b
-    assert envelope_b["case"]["purpose"] == "Một mục đích hoàn toàn khác"
+    assert envelope_b["case"]["purpose"] == changed["purpose"]
+
+
+def test_non_cash_payment_proof_uses_non_cash_verification() -> None:
+    concise = next(
+        case["input"]
+        for case in TEST_CASES["cases"]
+        if case["input"]["expense"].get("payment_method") == "BANK_TRANSFER"
+    )
+    concise = deepcopy(concise)
+    concise["evidence"] = {"non_cash_verified": False}
+
+    envelope = expand(concise, PROFILE, POLICY_VERSION)
+    payment_proof = next(
+        evidence
+        for evidence in envelope["case"]["evidence"]
+        if evidence["type"] == "PAYMENT_PROOF"
+    )
+
+    assert envelope["case"]["non_cash_evidence_verified"] is False
+    assert payment_proof["verified"] is False
+
+
+def test_schema_rejects_mismatched_escalation_types() -> None:
+    case = next(
+        case
+        for case in TEST_CASES["cases"]
+        if case["expected"].get("escalation_type") == "FACT_UNKNOWN"
+    )
+    envelope = materialize_envelope(case["input"], PROFILE, POLICY_VERSION, case["expected"])
+    envelope["escalation"]["type"] = "OUT_OF_POLICY"
+
+    assert list(_envelope_validator().iter_errors(envelope))
+
+
+def test_schema_enforces_routine_calculation_fields_by_flow() -> None:
+    member_paid = next(
+        case
+        for case in TEST_CASES["cases"]
+        if case["input"]["flow_type"] == "MEMBER_PAID"
+        and case["expected"].get("processing_result") == "ROUTINE_PROCESSED"
+    )
+    member_envelope = materialize_envelope(
+        member_paid["input"], PROFILE, POLICY_VERSION, member_paid["expected"]
+    )
+    del member_envelope["processing_outcome"]["reimbursement_amount_vnd"]
+
+    advance = next(
+        case
+        for case in TEST_CASES["cases"]
+        if case["input"]["flow_type"] == "ADVANCE_SETTLEMENT"
+        and case["expected"].get("processing_result") == "ROUTINE_PROCESSED"
+    )
+    advance_envelope = materialize_envelope(
+        advance["input"], PROFILE, POLICY_VERSION, advance["expected"]
+    )
+    advance_envelope["processing_outcome"]["reimbursement_amount_vnd"] = 1
+
+    assert list(_envelope_validator().iter_errors(member_envelope))
+    assert list(_envelope_validator().iter_errors(advance_envelope))

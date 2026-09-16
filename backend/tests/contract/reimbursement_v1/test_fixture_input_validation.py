@@ -34,3 +34,24 @@ def test_malformed_structural_input_is_rejected() -> None:
     errors = list(_validator().iter_errors(malformed))
     assert errors
     assert any("flow_type" in error.message for error in errors)
+
+
+def test_expense_cannot_combine_single_line_and_itemized_forms() -> None:
+    ambiguous = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "total_vnd": 850000,
+            "category": "printing",
+            "items": [
+                {
+                    "vendor": "V-SYN-001",
+                    "transaction_date": "2026-08-01",
+                    "purpose_code": "print",
+                    "category": "printing",
+                    "amount_vnd": 6000000,
+                }
+            ],
+        },
+        "duplicate_check": "CLEAR",
+    }
+    assert list(_validator().iter_errors(ambiguous))

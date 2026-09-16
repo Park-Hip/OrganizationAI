@@ -115,7 +115,10 @@ def _evidence_total(concise: dict[str, Any], declared_total: int) -> int:
 
 
 def _build_evidence(
-    concise: dict[str, Any], declared_total: int, advance_amount: int | None
+    concise: dict[str, Any],
+    declared_total: int,
+    advance_amount: int | None,
+    non_cash_verified: bool,
 ) -> list[dict[str, Any]]:
     evidence = concise.get("evidence") or {}
     digest = structural_digest(concise)
@@ -123,6 +126,9 @@ def _build_evidence(
     verified = bool(evidence.get("verified", True))
     ocr_confidence = evidence.get("ocr_confidence", None)
     payment_proof = bool(evidence.get("payment_proof", True))
+    payment_proof_verified = (
+        non_cash_verified if _payment_is_non_cash(concise["expense"]) else verified
+    )
     prior_approval = bool(evidence.get("prior_approval_present", False))
     evidence_total = _evidence_total(concise, declared_total)
 
@@ -148,7 +154,7 @@ def _build_evidence(
                 "type": "PAYMENT_PROOF",
                 "file_hash": f"sha256-{digest}",
                 "readable": readable,
-                "verified": verified,
+                "verified": payment_proof_verified,
                 "amount_vnd": evidence_total,
             }
         )
@@ -270,16 +276,18 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
     invoice_id = f"E-1-{digest[:8]}"
     flags = _suspicion_flags(concise)
     lines = _build_lines(concise, invoice_id, flags)
-    evidence_records = _build_evidence(concise, declared_total, advance_amount)
-
-    prior_approval_ids = []
-    if evidence.get("prior_approval_present"):
-        prior_approval_ids = [f"APR-{digest[:8]}"]
-
     if "non_cash_verified" in evidence:
         non_cash_verified = bool(evidence["non_cash_verified"])
     else:
         non_cash_verified = _payment_is_non_cash(expense)
+
+    evidence_records = _build_evidence(
+        concise, declared_total, advance_amount, non_cash_verified
+    )
+
+    prior_approval_ids = []
+    if evidence.get("prior_approval_present"):
+        prior_approval_ids = [f"APR-{digest[:8]}"]
 
     case: dict[str, Any] = {
         "case_id": _gen_id("CASE", concise),

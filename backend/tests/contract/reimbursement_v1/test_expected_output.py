@@ -79,25 +79,55 @@ def test_all_testable_rules_have_a_positive_fixture() -> None:
 
 
 def test_every_rule_has_a_positive_and_boundary_or_negative_assertion() -> None:
-    # Positive coverage is asserted above; boundary/negative coverage is proven by
-    # the existence of routine cases that do not trigger the escalation rules and
-    # by explicit boundary cases for threshold, deadline, conditional, and
-    # split-purchase paths.
-    routine_cases = [
-        c
-        for c in TEST_CASES["cases"]
-        if c["expected"].get("processing_result") == "ROUTINE_PROCESSED"
-    ]
-    escalated_cases = [
-        c for c in TEST_CASES["cases"] if c["expected"].get("processing_result") == "ESCALATED"
-    ]
-    boundary_titles = ("ngưỡng", "Đúng hạn")
-    boundary_ids = [
-        c["id"] for c in TEST_CASES["cases"] if any(t in c["title"] for t in boundary_titles)
-    ]
-    assert len(routine_cases) >= 10
-    assert len(escalated_cases) >= 15
-    assert {"TC-R03", "TC-R04", "TC-R08"} <= set(boundary_ids)
+    cases = [(case["input"], case["expected"]) for case in TEST_CASES["cases"]]
+
+    assert any(
+        input_data["expense"].get("total_vnd") == 4999999
+        and expected.get("processing_result") == "ROUTINE_PROCESSED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data["expense"].get("total_vnd") == 5000000
+        and expected.get("processing_result") == "ROUTINE_PROCESSED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data["expense"].get("total_vnd") == 5000001
+        and expected.get("escalation_type") == "AUTHORITY_REQUIRED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data.get("days_late") == 10
+        and expected.get("processing_result") == "ROUTINE_PROCESSED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data.get("days_late") == 11
+        and expected.get("escalation_type") == "AUTHORITY_REQUIRED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data["expense"].get("category") == "gift"
+        and input_data.get("evidence", {}).get("prior_approval_present") is True
+        and expected.get("processing_result") == "ROUTINE_PROCESSED"
+        for input_data, expected in cases
+    )
+    assert any(
+        input_data["expense"].get("category") == "gift"
+        and input_data.get("evidence", {}).get("prior_approval_present") is False
+        and expected.get("escalation_type") == "AUTHORITY_REQUIRED"
+        for input_data, expected in cases
+    )
+    assert any(
+        sum(item["amount_vnd"] for item in input_data["expense"].get("items", [])) == 4000000
+        and expected.get("processing_result") == "ROUTINE_PROCESSED"
+        for input_data, expected in cases
+    )
+    assert any(
+        sum(item["amount_vnd"] for item in input_data["expense"].get("items", [])) == 6000000
+        and expected.get("escalation_type") == "AUTHORITY_REQUIRED"
+        for input_data, expected in cases
+    )
 
 
 def test_verify_suite_matches_full_suite_expectations() -> None:

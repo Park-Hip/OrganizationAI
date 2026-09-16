@@ -128,11 +128,11 @@ The following boundaries are frozen for the reimbursement v1 path and are record
 
 ### Shared-file locks
 
-Until SETUP-04 merges, the named setup owner changes these shared paths only through the serial setup PRs:
+After SETUP-04 merges, Lane A and subsequent lanes coordinate changes to these shared paths:
 
 | Locked path | Changed by |
 | --- | --- |
-| `backend/app/main.py` | Integration/seam owner (SETUP-04 or a later coordinated integration PR) |
+| `backend/app/main.py` | Lane A or a later coordinated integration PR |
 | `backend/tests/conftest.py` | Test/infrastructure owner (SETUP-03) |
 | `backend/pyproject.toml` | Test/infrastructure owner (SETUP-03), narrowly scoped |
 | `.github/workflows/` | Test/infrastructure owner (SETUP-03) |
@@ -146,7 +146,7 @@ Each setup PR and each post-setup lane has one accountable owner and one owned d
 | --- | --- | --- | --- |
 | SETUP-02 | `docs/reimbursement-v1-contract-and-corpus` | Policy/contract owner | `policy-forge-baseline/`, `backend/tests/contract/reimbursement_v1/` |
 | SETUP-03 | `test/legacy-regression-and-v1-contract-gates` | Test/infrastructure owner | `backend/tests/fixtures/legacy_tmp_dev_001/`, `.github/workflows/`, `backend/pyproject.toml` |
-| SETUP-04 | `feat/reimbursement-v1-contract-seams` | Integration/seam owner | v1 packages under `backend/app/domain/reimbursement/`, `backend/app/policy/reimbursement/`, `backend/app/application/reimbursements/`, `backend/app/persistence/reimbursements/`, `backend/app/security/` |
+| SETUP-04 | `feat/reimbursement-v1-contract-seams` | Integration/seam owner | v1 packages under `backend/app/domain/reimbursement/`, `backend/app/policy/reimbursement/`, `backend/app/application/reimbursements/`, `backend/app/persistence/reimbursements/`, `backend/app/security/` (merged) |
 | Lane A | `feat/reimbursement-policy-engine` | Policy owner | `backend/app/policy/reimbursement/`, `backend/tests/unit/reimbursement_v1/policy/` |
 | Lane B | `feat/reimbursement-identity-authorization` | Security owner | `backend/app/security/` |
 | Lane C | `feat/reimbursement-v1-persistence` | Persistence owner | `backend/app/persistence/reimbursements/` |

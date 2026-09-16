@@ -10,6 +10,8 @@ import pytest
 from _artifacts import POLICY_VERSION, PROFILE, REIMBURSEMENT_SCHEMA, TEST_CASES
 from _expand import expand, materialize_envelope
 
+pytestmark = pytest.mark.v1_contract
+
 
 def _envelope_validator() -> jsonschema.Draft202012Validator:
     return jsonschema.Draft202012Validator(

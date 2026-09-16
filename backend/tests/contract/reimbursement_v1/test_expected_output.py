@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from _artifacts import POLICY_VERSION, PROFILE, RULES, TEST_CASES, VERIFY_CASES
 from _expand import _declared_total, materialize_envelope
+
+pytestmark = pytest.mark.v1_contract
 
 
 def _terminal_rule_ids(case: dict[str, Any]) -> list[str]:

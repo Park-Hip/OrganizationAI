@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import jsonschema
+import pytest
 from _artifacts import PROFILE, REIMBURSEMENT_SCHEMA
+
+pytestmark = pytest.mark.v1_contract
 
 
 def _organization_profile_validator() -> jsonschema.Draft202012Validator:

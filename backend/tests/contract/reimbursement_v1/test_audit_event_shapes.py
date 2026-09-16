@@ -5,7 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 import jsonschema
+import pytest
 from _artifacts import REIMBURSEMENT_SCHEMA
+
+pytestmark = pytest.mark.v1_contract
 
 
 def _audit_validator() -> jsonschema.Draft202012Validator:

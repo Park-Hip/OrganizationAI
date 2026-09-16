@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import jsonschema
+import pytest
 from _artifacts import FIXTURE_SCHEMA, REIMBURSEMENT_SCHEMA
+
+pytestmark = pytest.mark.v1_contract
 
 
 def test_reimbursement_schema_is_a_valid_draft_2020_12_schema() -> None:

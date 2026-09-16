@@ -89,9 +89,7 @@ def _member_paid_case(*, paused: bool = False) -> ReimbursementCase:
     return ReimbursementCase(
         case_id="CASE-001",
         flow_type=FlowType.MEMBER_PAID,
-        requester=PersonRef(
-            person_id="P-001", display_name="Synthetic Member", role="MEMBER"
-        ),
+        requester=PersonRef(person_id="P-001", display_name="Synthetic Member", role="MEMBER"),
         submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
         task_or_event="Synthetic event",
         event_end_date=date(2026, 9, 15),
@@ -277,9 +275,7 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
     case_payload = ReimbursementCase(
         case_id="CASE-001",
         flow_type=FlowType.MEMBER_PAID,
-        requester=PersonRef(
-            person_id="P-001", display_name="Synthetic Member", role="MEMBER"
-        ),
+        requester=PersonRef(person_id="P-001", display_name="Synthetic Member", role="MEMBER"),
         submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
         task_or_event="Synthetic event",
         event_end_date=date(2026, 9, 15),
@@ -404,7 +400,9 @@ def test_evaluator_enforces_case_control_and_flow_output_invariants(
         evaluate(_member_paid_case(), mismatched_profile, _policy_snapshot(), ControlState.ACTIVE)
 
     with pytest.raises(ValueError, match="paused case requires"):
-        evaluate(_member_paid_case(paused=True), _profile(), _policy_snapshot(), ControlState.ACTIVE)
+        evaluate(
+            _member_paid_case(paused=True), _profile(), _policy_snapshot(), ControlState.ACTIVE
+        )
 
     def policy_core_must_not_run(*_: object) -> ProcessingPacket:
         raise AssertionError("a paused case must not reach policy evaluation")

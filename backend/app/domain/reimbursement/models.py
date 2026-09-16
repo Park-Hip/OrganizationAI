@@ -7,7 +7,7 @@ and deliberately separate from the historical TMP-DEV-001 domain models.
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import (
     AwareDatetime,

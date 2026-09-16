@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+import app.policy.reimbursement.evaluator as evaluator_module
 from app.domain.reimbursement import (
     ApprovalStatus,
     AuthorityThresholdOperator,
@@ -81,6 +82,62 @@ def _outcome() -> ProcessingOutcome:
     )
 
 
+def _member_paid_case(*, paused: bool = False) -> ReimbursementCase:
+    return ReimbursementCase(
+        case_id="CASE-001",
+        flow_type=FlowType.MEMBER_PAID,
+        requester=PersonRef(
+            person_id="P-001", display_name="Synthetic Member", role="MEMBER"
+        ),
+        submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
+        task_or_event="Synthetic event",
+        event_end_date=date(2026, 9, 15),
+        purpose="Synthetic printing",
+        budget_code="BUDGET-001",
+        approved_budget_vnd=1_000_000,
+        remaining_budget_vnd=1_000_000,
+        expense_items=(
+            {
+                "line_id": "LINE-001",
+                "vendor": "Synthetic Vendor",
+                "transaction_date": "2026-09-15",
+                "purpose_code": "PRINT",
+                "description": "Synthetic printing",
+                "category": "printing",
+                "amount_vnd": 850_000,
+                "payment_method": "CARD",
+                "evidence_ids": ["EVD-001"],
+                "suspicion_flags": [],
+            },
+        ),
+        evidence=(
+            {
+                "evidence_id": "EVD-001",
+                "type": "INVOICE",
+                "file_hash": "sha256-synthetic",
+                "readable": True,
+                "verified": True,
+            },
+        ),
+        declared_total_vnd=850_000,
+        reimbursement_account={
+            "account_name": "Synthetic Member",
+            "bank_name": "Synthetic Bank",
+            "masked_account_number": "***0001",
+        },
+        paused=paused,
+    )
+
+
+def _policy_snapshot() -> PolicySnapshot:
+    return PolicySnapshot(
+        policy_id="POL-REIMB-CLB",
+        policy_version="1.2.0",
+        content_hash="sha256-synthetic-policy",
+        serialized_policy="synthetic policy snapshot",
+    )
+
+
 def test_evaluator_signature_is_frozen_and_not_implemented_in_setup() -> None:
     signature = inspect.signature(evaluate)
 
@@ -94,57 +151,9 @@ def test_evaluator_signature_is_frozen_and_not_implemented_in_setup() -> None:
 
     with pytest.raises(NotImplementedError, match="Lane A"):
         evaluate(
-            ReimbursementCase(
-                case_id="CASE-001",
-                flow_type=FlowType.MEMBER_PAID,
-                requester=PersonRef(
-                    person_id="P-001", display_name="Synthetic Member", role="MEMBER"
-                ),
-                submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
-                task_or_event="Synthetic event",
-                event_end_date=date(2026, 9, 15),
-                purpose="Synthetic printing",
-                budget_code="BUDGET-001",
-                approved_budget_vnd=1_000_000,
-                remaining_budget_vnd=1_000_000,
-                expense_items=(
-                    {
-                        "line_id": "LINE-001",
-                        "vendor": "Synthetic Vendor",
-                        "transaction_date": "2026-09-15",
-                        "purpose_code": "PRINT",
-                        "description": "Synthetic printing",
-                        "category": "printing",
-                        "amount_vnd": 850_000,
-                        "payment_method": "CARD",
-                        "evidence_ids": ["EVD-001"],
-                        "suspicion_flags": [],
-                    },
-                ),
-                evidence=(
-                    {
-                        "evidence_id": "EVD-001",
-                        "type": "INVOICE",
-                        "file_hash": "sha256-synthetic",
-                        "readable": True,
-                        "verified": True,
-                    },
-                ),
-                declared_total_vnd=850_000,
-                reimbursement_account={
-                    "account_name": "Synthetic Member",
-                    "bank_name": "Synthetic Bank",
-                    "masked_account_number": "***0001",
-                },
-                paused=False,
-            ),
+            _member_paid_case(),
             _profile(),
-            PolicySnapshot(
-                policy_id="POL-REIMB-CLB",
-                policy_version="1.2.0",
-                content_hash="sha256-synthetic-policy",
-                serialized_policy="synthetic policy snapshot",
-            ),
+            _policy_snapshot(),
             ControlState.ACTIVE,
         )
 
@@ -251,6 +260,17 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
             amount_vnd=True,
         )
 
+    evidence_payload = {
+        "evidence_id": "EVD-001",
+        "type": "INVOICE",
+        "file_hash": "sha256-synthetic",
+        "readable": True,
+        "verified": True,
+    }
+    for ocr_confidence in (True, "0.9"):
+        with pytest.raises(ValueError):
+            Evidence.model_validate(evidence_payload | {"ocr_confidence": ocr_confidence})
+
     case_payload = ReimbursementCase(
         case_id="CASE-001",
         flow_type=FlowType.MEMBER_PAID,
@@ -322,6 +342,61 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
     )
     with pytest.raises(ValueError):
         ProcessingOutcome.model_validate(outcome_payload)
+
+
+def test_evaluator_enforces_case_control_and_flow_output_invariants(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    invalid_member_outcome = ProcessingOutcome(
+        outcome_id="OUT-004",
+        processing_result=ProcessingResult.ROUTINE_PROCESSED,
+        escalation_type=None,
+        eligible_total_vnd=850_000,
+        amount_to_return_vnd=0,
+        additional_payment_vnd=0,
+        reimbursement_amount_vnd=850_000,
+        triggered_rule_ids=("RULE-CALC-002",),
+        explanation_vi="A valid result with incompatible calculations.",
+        created_at=datetime(2026, 9, 16, tzinfo=UTC),
+    )
+    monkeypatch.setattr(
+        evaluator_module,
+        "_evaluate_policy",
+        lambda *_: ProcessingPacket(
+            control_state=ControlState.ACTIVE,
+            outcome=invalid_member_outcome,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="MEMBER_PAID must not contain advance calculations"):
+        evaluate(_member_paid_case(), _profile(), _policy_snapshot(), ControlState.ACTIVE)
+
+    with pytest.raises(ValueError, match="paused case requires"):
+        evaluate(_member_paid_case(paused=True), _profile(), _policy_snapshot(), ControlState.ACTIVE)
+
+    monkeypatch.setattr(
+        evaluator_module,
+        "_evaluate_policy",
+        lambda *_: ProcessingPacket(control_state=ControlState.PAUSED),
+    )
+    with pytest.raises(ValueError, match="control state must match"):
+        evaluate(_member_paid_case(), _profile(), _policy_snapshot(), ControlState.ACTIVE)
+
+    advance_case = ReimbursementCase.model_validate(
+        _member_paid_case().model_dump()
+        | {
+            "flow_type": FlowType.ADVANCE_SETTLEMENT,
+            "advance_reference": "ADV-001",
+            "advance_amount_vnd": 850_000,
+        }
+    )
+    monkeypatch.setattr(
+        evaluator_module,
+        "_evaluate_policy",
+        lambda *_: ProcessingPacket(control_state=ControlState.ACTIVE, outcome=_outcome()),
+    )
+    with pytest.raises(ValueError, match="ADVANCE_SETTLEMENT requires both advance calculations"):
+        evaluate(advance_case, _profile(), _policy_snapshot(), ControlState.ACTIVE)
 
 
 def test_v1_packages_import_without_legacy_or_infrastructure_modules() -> None:

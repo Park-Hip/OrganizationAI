@@ -14,6 +14,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictBool,
+    StrictFloat,
     StrictInt,
     field_validator,
     model_validator,
@@ -190,7 +191,7 @@ class Evidence(FrozenDomainModel):
     file_hash: str = Field(min_length=8)
     readable: StrictBool
     verified: StrictBool
-    ocr_confidence: float | None = Field(default=None, ge=0, le=1)
+    ocr_confidence: StrictFloat | StrictInt | None = Field(default=None, ge=0, le=1)
     document_number: str | None = None
     document_date: date | None = None
     amount_vnd: StrictInt | None = Field(default=None, ge=0)

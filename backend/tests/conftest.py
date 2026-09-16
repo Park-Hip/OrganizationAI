@@ -45,16 +45,19 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 # ---------------------------------------------------------------------------
-# Temporary corpus reader for the L3 test suite.
+# Legacy temporary corpus reader for the L3 regression suite.
 #
-# Reads the canonical temporary corpus as test-only data and converts each row
-# into the frozen Layer 0 CaseSubmission shape. Production code never imports
-# this reader, and the reader never decides policy.
+# Reads the historical synthetic TMP-DEV-001 corpus as test-only data and
+# converts each row into the frozen Layer 0 CaseSubmission shape. It lives
+# under tests/fixtures/legacy_tmp_dev_001/ so historical temporary material
+# stays separate from the current Policy Forge reimbursement corpus. Production
+# code never imports this reader, and the reader never decides policy.
 # ---------------------------------------------------------------------------
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY_ROOT = BACKEND_ROOT.parent
-CORPUS_PATH = REPOSITORY_ROOT / "docs" / "05_temporary_case_corpus.csv"
+CORPUS_PATH = (
+    BACKEND_ROOT / "tests" / "fixtures" / "legacy_tmp_dev_001" / "temporary_case_corpus.csv"
+)
 
 CORPUS_REQUIRED_HEADERS: tuple[str, ...] = (
     "fixture_id",
@@ -139,9 +142,9 @@ def _validate_corpus_rows(
 
 
 def _read_temporary_corpus() -> list[dict[str, str | None]]:
-    """Read and validate the canonical temporary corpus from the repository docs."""
+    """Read and validate the historical synthetic TMP-DEV-001 corpus fixture."""
     if not CORPUS_PATH.is_file():
-        raise ValueError(f"temporary corpus not found at {CORPUS_PATH}")
+        raise ValueError(f"legacy temporary corpus not found at {CORPUS_PATH}")
     with CORPUS_PATH.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.reader(handle)
         fields = _validate_corpus_header(next(reader, None))

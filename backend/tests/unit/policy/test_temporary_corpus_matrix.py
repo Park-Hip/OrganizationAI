@@ -12,8 +12,12 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import cast
 
+import pytest
+
 from app.domain.models import CaseSubmission, DecisionDraft
 from app.policy import TMP_DEV_001_PROFILE
+
+pytestmark = pytest.mark.legacy
 
 _NO_PAYMENT_REASON = "Approved under temporary development profile; no payment was made."
 

@@ -25,6 +25,8 @@ from app.persistence.models.temporary_history import (
 )
 from app.persistence.repositories.temporary_history import TemporaryHistoryRepository
 
+pytestmark = pytest.mark.unit
+
 _FIXED_NOW = datetime(2030, 1, 1, 12, 0, 0, tzinfo=UTC)
 
 

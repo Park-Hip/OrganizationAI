@@ -8,6 +8,8 @@ from pydantic import ValidationError
 from app.domain.enums import DecisionOutcome, TemporaryRuleId
 from app.domain.models import DecisionDraft
 
+pytestmark = pytest.mark.contract
+
 
 def _draft(**overrides: object) -> dict[str, object]:
     data: dict[str, object] = {

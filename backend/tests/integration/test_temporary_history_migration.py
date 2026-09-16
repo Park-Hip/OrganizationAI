@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from _db_utils import run_alembic
 from sqlalchemy import Engine, inspect, text
+
+pytestmark = pytest.mark.integration
 
 pytest_plugins = ["_db_utils"]
 

@@ -22,6 +22,8 @@ from app.domain.models import NormalizedCase, TemporaryProfile
 from app.policy.evaluator import evaluate_case
 from app.policy.profile import TMP_DEV_001_PROFILE
 
+pytestmark = pytest.mark.unit
+
 _BACKEND_ROOT = Path(__file__).resolve().parents[3]
 
 _BASE_EXPENSE: dict[str, object] = {

@@ -84,6 +84,21 @@
         "required": ["expense", "evidence"]
       },
       "then": false
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence": {
+            "properties": {
+              "payment_proof": {"const": false},
+              "non_cash_verified": {"const": true}
+            },
+            "required": ["payment_proof", "non_cash_verified"]
+          }
+        },
+        "required": ["evidence"]
+      },
+      "then": false
     }
   ],
   "$defs": {
@@ -91,6 +106,7 @@
     "ConciseBudget": {
       "type": "object",
       "additionalProperties": false,
+      "minProperties": 1,
       "properties": {
         "approved_vnd": {"$ref": "#/$defs/Money"},
         "remaining_vnd": {"$ref": "#/$defs/Money"}

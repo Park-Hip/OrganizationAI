@@ -78,7 +78,10 @@ def normalize_concise_input(concise: dict[str, Any]) -> dict[str, Any]:
     evidence.setdefault("ocr_confidence", None)
     evidence.setdefault("verified", True)
     evidence.setdefault("payment_proof", True)
-    evidence.setdefault("non_cash_verified", _payment_is_non_cash(expense))
+    evidence.setdefault(
+        "non_cash_verified",
+        _payment_is_non_cash(expense) and evidence["payment_proof"],
+    )
     evidence.setdefault("prior_approval_present", False)
     evidence.setdefault("event_link", True)
 
@@ -431,7 +434,9 @@ def materialize_envelope(
         "triggered_rule_ids": list(expected["triggered_rule_ids"]),
         "evidence_used": [f"E-1-{digest[:8]}"],
         "explanation_vi": "Kết quả xử lý tổng hợp; không phải phê duyệt hay lệnh thanh toán.",
-        "created_at": "2026-09-10T09:05:00Z",
+        "created_at": _audit_timestamp(
+            envelope["case"]["submitted_at"], len(envelope["audit_events"])
+        ),
     }
     for field in (
         "eligible_total_vnd",

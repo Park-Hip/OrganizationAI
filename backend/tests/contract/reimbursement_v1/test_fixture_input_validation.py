@@ -116,3 +116,27 @@ def test_member_paid_fixture_cannot_include_advance_evidence() -> None:
         "duplicate_check": "CLEAR",
     }
     assert list(_validator().iter_errors(member_paid_with_advance))
+
+
+def test_non_cash_verification_requires_payment_proof() -> None:
+    contradictory_evidence = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "total_vnd": 850000,
+            "category": "printing",
+            "payment_method": "BANK_TRANSFER",
+        },
+        "evidence": {"payment_proof": False, "non_cash_verified": True},
+        "duplicate_check": "CLEAR",
+    }
+    assert list(_validator().iter_errors(contradictory_evidence))
+
+
+def test_budget_cannot_be_an_empty_object() -> None:
+    empty_budget = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {"total_vnd": 850000, "category": "printing"},
+        "budget": {},
+        "duplicate_check": "CLEAR",
+    }
+    assert list(_validator().iter_errors(empty_budget))

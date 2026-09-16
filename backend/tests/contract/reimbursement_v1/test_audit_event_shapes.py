@@ -68,6 +68,10 @@ def test_settlement_requires_role_reason_predecessor_and_evidence() -> None:
         del missing[field]
         assert _errors(missing)
 
+    proofless = dict(event)
+    proofless["evidence_ids"] = []
+    assert _errors(proofless)
+
 
 def test_decision_and_settlement_events_require_human_actors() -> None:
     for event_type, fields in (

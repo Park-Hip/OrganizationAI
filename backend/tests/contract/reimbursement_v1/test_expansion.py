@@ -191,6 +191,37 @@ def test_non_cash_payment_proof_uses_non_cash_verification() -> None:
     assert payment_proof["verified"] is False
 
 
+def test_non_cash_verification_defaults_false_without_payment_proof() -> None:
+    concise = next(
+        case["input"]
+        for case in TEST_CASES["cases"]
+        if case["input"]["expense"].get("payment_method") == "BANK_TRANSFER"
+    )
+    concise = deepcopy(concise)
+    concise["evidence"] = {"payment_proof": False}
+
+    envelope = expand(concise, PROFILE, POLICY_VERSION)
+
+    assert envelope["case"]["non_cash_evidence_verified"] is False
+    assert not any(
+        evidence["type"] == "PAYMENT_PROOF" for evidence in envelope["case"]["evidence"]
+    )
+
+
+def test_materialized_outcome_follows_initial_audit_events() -> None:
+    case = next(
+        case
+        for case in TEST_CASES["cases"]
+        if case["expected"].get("control_state", "ACTIVE") == "ACTIVE"
+    )
+    concise = deepcopy(case["input"])
+    concise["submitted_at"] = "2026-10-01T09:00:00Z"
+
+    envelope = materialize_envelope(concise, PROFILE, POLICY_VERSION, case["expected"])
+
+    assert envelope["processing_outcome"]["created_at"] == "2026-10-01T09:00:02Z"
+
+
 def test_schema_rejects_mismatched_escalation_types() -> None:
     case = next(
         case

@@ -298,7 +298,7 @@
         {"if": {"properties": {"event_type": {"const": "HUMAN_DECISION"}}, "required": ["event_type"]},
          "then": {"properties": {"actor_type": {"const": "HUMAN"}}, "required": ["actor_role", "reason", "previous_outcome_id", "decision"]}},
         {"if": {"properties": {"event_type": {"const": "SETTLEMENT"}}, "required": ["event_type"]},
-         "then": {"properties": {"actor_type": {"const": "HUMAN"}}, "required": ["actor_role", "reason", "predecessor_event_id", "evidence_ids"]}}
+         "then": {"properties": {"actor_type": {"const": "HUMAN"}, "evidence_ids": {"minItems": 1}}, "required": ["actor_role", "reason", "predecessor_event_id", "evidence_ids"]}}
       ]
     }
   }

@@ -28,6 +28,8 @@ def evaluate(
     The evaluator has no access to a clock, database, network, file storage,
     LLM, authenticated actor, or payment system.
     """
+    if profile_snapshot.policy_version != policy_snapshot.policy_version:
+        raise ValueError("profile and policy snapshots must use the same policy version")
     if case.paused and control_state is not ControlState.PAUSED:
         raise ValueError("a paused case requires a PAUSED control state")
     packet = _evaluate_policy(case, profile_snapshot, policy_snapshot, control_state)

@@ -371,6 +371,10 @@ def test_evaluator_enforces_case_control_and_flow_output_invariants(
     with pytest.raises(ValueError, match="MEMBER_PAID must not contain advance calculations"):
         evaluate(_member_paid_case(), _profile(), _policy_snapshot(), ControlState.ACTIVE)
 
+    mismatched_profile = _profile().model_copy(update={"policy_version": "1.3.0"})
+    with pytest.raises(ValueError, match="same policy version"):
+        evaluate(_member_paid_case(), mismatched_profile, _policy_snapshot(), ControlState.ACTIVE)
+
     with pytest.raises(ValueError, match="paused case requires"):
         evaluate(_member_paid_case(paused=True), _profile(), _policy_snapshot(), ControlState.ACTIVE)
 

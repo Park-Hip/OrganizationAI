@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from enum import Enum
 
+import pytest
+
 from app.domain import enums
+
+pytestmark = pytest.mark.contract
 
 
 def _values(enum_type: type[Enum]) -> set[str]:

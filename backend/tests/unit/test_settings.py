@@ -9,6 +9,8 @@ from pydantic import ValidationError
 
 from app.core.settings import Settings, get_settings
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(autouse=True)
 def _isolate_environment(monkeypatch: pytest.MonkeyPatch) -> None:

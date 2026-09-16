@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Format, lint, and type check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install pinned Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy app tests
+
+  test-legacy:
+    name: Legacy regression tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run legacy regression tests
+        run: uv run pytest -m legacy -q
+
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run unit tests
+        run: uv run pytest -m unit -q
+
+  test-contract:
+    name: Frozen contract tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run frozen contract tests
+        run: uv run pytest -m contract -q
+
+  v1-contract:
+    name: Reimbursement v1 source-contract validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run v1 source-contract validation
+        run: |
+          if [ ! -d tests/contract/reimbursement_v1 ]; then
+            echo "Reimbursement v1 source-contract tests are required after SETUP-02 merges."
+            exit 1
+          fi
+          uv run pytest tests/contract/reimbursement_v1 -q
+
+  integration:
+    name: Database integration tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: decisioncore
+          POSTGRES_PASSWORD: decisioncore
+          POSTGRES_DB: decisioncore_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U decisioncore -d decisioncore_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg2://decisioncore:decisioncore@localhost:5433/decisioncore_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - run: uv python install 3.12
+
+      - run: uv sync
+
+      - name: Run Postgres-backed integration tests
+        run: uv run pytest -m integration -q

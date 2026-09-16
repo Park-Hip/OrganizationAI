@@ -17,6 +17,8 @@ from app.policy.normalization import (
     question_for_field_path,
 )
 
+pytestmark = pytest.mark.unit
+
 _EXPENSE = {
     "category": "TEST_ALLOWED",
     "description": "Synthetic materials line",

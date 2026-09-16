@@ -23,6 +23,8 @@ from app.domain.models import CaseSubmission, Expense
 from app.persistence.models.temporary_history import TemporaryAuditEvent
 from app.persistence.repositories.temporary_history import TemporaryHistoryRepository
 
+pytestmark = pytest.mark.integration
+
 pytest_plugins = ["_db_utils"]
 
 

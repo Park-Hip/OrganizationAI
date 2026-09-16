@@ -23,6 +23,8 @@ from app.domain.control import (
 )
 from app.domain.enums import DecisionOutcome
 
+pytestmark = pytest.mark.unit
+
 
 def _event(
     sequence: int, action: str, payload: dict[str, object] | None = None

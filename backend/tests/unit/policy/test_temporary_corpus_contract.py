@@ -18,6 +18,8 @@ from app.domain.enums import DecisionOutcome, EvidenceStatus, TemporaryCategory,
 from app.domain.models import CaseSubmission
 from app.policy.profile import TMP_DEV_001_PROFILE
 
+pytestmark = pytest.mark.legacy
+
 
 def _row_for(rows: list[dict[str, str | None]], fixture_id: str) -> dict[str, str | None]:
     for row in rows:

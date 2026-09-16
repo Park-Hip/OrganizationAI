@@ -13,8 +13,12 @@ from app.domain.models import Expense, NormalizedCase
 from app.policy.evaluator import evaluate_case
 from app.policy.profile import TMP_DEV_001_PROFILE
 
-_REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-_CORPUS_PATH = _REPOSITORY_ROOT / "docs" / "05_temporary_case_corpus.csv"
+_BACKEND_ROOT = Path(__file__).resolve().parents[3]
+_CORPUS_PATH = (
+    _BACKEND_ROOT / "tests" / "fixtures" / "legacy_tmp_dev_001" / "temporary_case_corpus.csv"
+)
+
+pytestmark = pytest.mark.legacy
 
 _REQUIRED_HEADERS: tuple[str, ...] = (
     "fixture_id",
@@ -204,8 +208,3 @@ def test_empty_cells_become_none_but_whitespace_is_preserved() -> None:
     assert _empty_to_none("") is None
     assert _empty_to_none("   ") == "   "
     assert _empty_to_none("value") == "value"
-
-
-def test_corpus_path_is_the_documented_repository_fixture() -> None:
-    assert _CORPUS_PATH == _REPOSITORY_ROOT / "docs" / "05_temporary_case_corpus.csv"
-    assert _CORPUS_PATH.is_file()

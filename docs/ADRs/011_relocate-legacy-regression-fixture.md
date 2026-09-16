@@ -18,4 +18,4 @@ Do not relabel the temporary material as a reimbursement corpus.
 ## Consequences
 
 The existing suite returns to health without mixing historical temporary material with the current numbered corpus.
-When moved, the fixture carries explicit `TMP-DEV-001`, `SYNTHETIC`, `TEMPORARY_DEVELOPMENT`, and `UNVALIDATED` provenance.
+The fixture carries explicit `TMP-DEV-001`, `SYNTHETIC`, `TEMPORARY_DEVELOPMENT`, and `UNVALIDATED` provenance.

@@ -19,6 +19,8 @@ from app.api.schemas.temporary_history import (
 )
 from app.domain.models import CaseSubmission
 
+pytestmark = pytest.mark.unit
+
 _ENDPOINT = "/api/temporary/decision-traces"
 _TRACE_ID = UUID("00000000-0000-0000-0000-000000000001")
 _EXPECTED_PROVENANCE = {

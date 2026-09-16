@@ -83,6 +83,56 @@ Request `http://localhost:8000/health` to confirm the service reports its proces
 The gate runs, in order: format check, lint, type check, tests, and the environment smoke check.
 It stops on the first failure and returns that exit code.
 
+## Test groups and supported commands
+
+Tests are grouped with pytest markers so a local run and CI can target one group at a time.
+The markers are defined in `pyproject.toml`.
+
+| Marker | Group | Command |
+| --- | --- | --- |
+| `unit` | Domain, API, application, and policy unit tests that need no database or service. | `uv run pytest -m unit` |
+| `contract` | Layer 0 frozen-contract and layer-boundary tests. | `uv run pytest -m contract` |
+| `legacy` | Historical synthetic `TMP-DEV-001` corpus and regression tests. | `uv run pytest -m legacy` |
+| `v1_contract` | Reimbursement v1 source-contract validation tests. | `uv run pytest -m v1_contract` |
+| `integration` | Postgres-backed service, migration, and immutability tests. | `uv run pytest -m integration` |
+
+Run the whole non-database suite with one command:
+
+```bash
+uv run pytest -m "not integration"
+```
+
+This is the normal local loop and is the command the repository requires as its green baseline.
+On Windows the same run is available directly from the created virtual environment:
+
+```powershell
+.venv\Scripts\python.exe -m pytest -m "not integration" -q
+```
+
+### Expected pass and skip behavior
+
+The non-database baseline does not collect integration tests and is green when its selected tests pass.
+`uv run pytest -m integration` skips with a message naming `TEST_DATABASE_URL` whenever the isolated test database is not configured.
+They run, rather than skip, only after `test-db` is started and `TEST_DATABASE_URL` is exported.
+A skip is reported clearly and is never presented as a pass.
+The `v1_contract` command has no selected tests until SETUP-02 adds `tests/contract/reimbursement_v1/`.
+CI intentionally fails its v1 source-contract job while that directory is absent, so the setup sequencing cannot be mistaken for successful validation.
+
+### Failure triage
+
+A `legacy` failure usually means the historical fixture under `tests/fixtures/legacy_tmp_dev_001/` no longer matches the frozen reader schema.
+Check that the fixture still carries the `TMP-DEV-001`, `SYNTHETIC`, `TEMPORARY_DEVELOPMENT`, and `UNVALIDATED` provenance and has not been mixed with the `policy-forge-baseline` corpus.
+When `TEST_DATABASE_URL` names an unreachable database, integration tests skip with a `temporary-history test database unavailable` message.
+An integration error after the database is reachable can mean its schema is stale.
+Recreate the synthetic-only database and rerun `uv run alembic upgrade head` against it.
+Formatting, lint, and type failures are the first CI checks; reproduce them locally with `uv run ruff format --check .`, `uv run ruff check .`, and `uv run mypy app tests`.
+
+### Continuous integration
+
+The `.github/workflows/ci.yml` workflow runs six separately reported jobs on every pull request:
+`quality` (format, lint, type), `test-legacy` (legacy regressions), `test-unit` (unit tests), `test-contract` (frozen contract tests), `v1-contract` (v1 source-contract validation), and `integration` (Postgres-backed tests against a synthetic-only database service).
+These job names become the required status checks once the workflow is shown green on the setup branch.
+
 ## What this foundation proves
 
 - A clean clone installs and configures from committed, locked dependencies.
@@ -169,7 +219,7 @@ Service, migration, and immutability tests run against a separate, synthetic-onl
 ```bash
 docker compose up -d test-db
 export TEST_DATABASE_URL='postgresql+psycopg2://decisioncore:<your-postgres-password>@localhost:5433/decisioncore_test'
-uv run pytest tests/integration
+uv run pytest -m integration
 ```
 
 `TEST_DATABASE_URL` is required to run the decision-history and Control Deck service, migration, immutability, idempotency, and concurrency tests against the synthetic-only `test-db` service.

@@ -49,3 +49,10 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "unit: tests that need no database, network, or external service",
+    "contract: Layer 0 frozen-contract and layer-boundary tests",
+    "legacy: legacy TMP-DEV-001 temporary regression and corpus tests",
+    "v1_contract: reimbursement v1 source-contract validation tests",
+    "integration: tests that require the synthetic-only Postgres test database",
+]

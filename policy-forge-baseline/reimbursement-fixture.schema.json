@@ -132,7 +132,7 @@
         },
         {
           "required": ["items"],
-          "not": {"anyOf": [{"required": ["total_vnd"]}, {"required": ["category"]}]}
+          "not": {"anyOf": [{"required": ["total_vnd"]}, {"required": ["category"]}, {"required": ["vendor"]}, {"required": ["transaction_date"]}, {"required": ["purpose_code"]}, {"required": ["payment_method"]}]}
         }
       ]
     },

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+
 import jsonschema
 from _artifacts import FIXTURE_SCHEMA, TEST_CASES, VERIFY_CASES
 
@@ -55,6 +57,35 @@ def test_expense_cannot_combine_single_line_and_itemized_forms() -> None:
         "duplicate_check": "CLEAR",
     }
     assert list(_validator().iter_errors(ambiguous))
+
+
+def test_itemized_expense_cannot_carry_single_line_scalars() -> None:
+    base = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "items": [
+                {
+                    "vendor": "V-SYN-001",
+                    "transaction_date": "2026-08-01",
+                    "purpose_code": "print",
+                    "category": "printing",
+                    "amount_vnd": 6000000,
+                }
+            ]
+        },
+        "duplicate_check": "CLEAR",
+    }
+    scalars = {
+        "vendor": "V-SYN-001",
+        "transaction_date": "2026-08-01",
+        "purpose_code": "print",
+        "payment_method": "CASH",
+    }
+    for key, value in scalars.items():
+        hybrid = deepcopy(base)
+        hybrid["expense"][key] = value
+        errors = list(_validator().iter_errors(hybrid))
+        assert errors, key
 
 
 def test_unknown_missing_fact_is_rejected() -> None:

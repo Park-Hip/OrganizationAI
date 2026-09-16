@@ -221,6 +221,24 @@ def test_materialized_outcome_follows_initial_audit_events() -> None:
     assert envelope["processing_outcome"]["created_at"] == "2026-10-01T09:00:02Z"
 
 
+def test_schema_rejects_advance_fields_for_member_paid_case() -> None:
+    member_paid = next(
+        case["input"]
+        for case in TEST_CASES["cases"]
+        if case["input"]["flow_type"] == "MEMBER_PAID"
+    )
+    case_validator = _component_validator("ReimbursementCase")
+    base = expand(member_paid, PROFILE, POLICY_VERSION)["case"]
+
+    only_reference = deepcopy(base)
+    only_reference["advance_reference"] = "ADV-SYN-001"
+    assert list(case_validator.iter_errors(only_reference))
+
+    only_amount = deepcopy(base)
+    only_amount["advance_amount_vnd"] = 1000000
+    assert list(case_validator.iter_errors(only_amount))
+
+
 def test_schema_rejects_mismatched_escalation_types() -> None:
     case = next(
         case

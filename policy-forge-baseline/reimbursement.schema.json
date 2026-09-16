@@ -205,7 +205,7 @@
       },
       "allOf": [
         {"if": {"properties": {"flow_type": {"const": "ADVANCE_SETTLEMENT"}}}, "then": {"required": ["advance_reference", "advance_amount_vnd"]}},
-        {"if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}}, "then": {"not": {"required": ["advance_reference", "advance_amount_vnd"]}}}
+        {"if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}}, "then": {"not": {"anyOf": [{"required": ["advance_reference"]}, {"required": ["advance_amount_vnd"]}]}}}
       ]
     },
     "Escalation": {

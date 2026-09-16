@@ -15,6 +15,8 @@ from app.domain.reimbursement import (
     AuthorityThresholdOperator,
     ControlState,
     EscalationType,
+    Evidence,
+    ExpenseItem,
     FlowType,
     OrganizationProfile,
     PersonRef,
@@ -173,6 +175,154 @@ def test_packet_enforces_paused_and_routine_output_invariants() -> None:
             ),
         )
 
+    with pytest.raises(ValueError, match="must not contain proposed calculations"):
+        ProcessingOutcome(
+            outcome_id="OUT-003",
+            processing_result=ProcessingResult.ESCALATED,
+            escalation_type=EscalationType.FACT_UNKNOWN,
+            eligible_total_vnd=0,
+            triggered_rule_ids=("RULE-FACT-001",),
+            explanation_vi="Additional evidence is required before processing can continue.",
+            created_at=datetime(2026, 9, 16, tzinfo=UTC),
+        )
+
+
+def test_profile_and_policy_snapshots_reject_schema_incompatible_versions() -> None:
+    profile_payload = _profile().model_dump()
+
+    with pytest.raises(ValueError, match="semantic versioning"):
+        OrganizationProfile.model_validate(profile_payload | {"profile_version": "draft"})
+
+    with pytest.raises(ValueError, match="aggregation keys must be unique"):
+        OrganizationProfile.model_validate(
+            profile_payload | {"aggregation_keys": ("vendor", "vendor")}
+        )
+
+    with pytest.raises(ValueError, match="semantic versioning"):
+        PolicySnapshot(
+            policy_id="POL-REIMB-CLB",
+            policy_version="draft",
+            content_hash="sha256-synthetic-policy",
+            serialized_policy="synthetic policy snapshot",
+        )
+
+
+def test_v1_structural_scalars_reject_coercible_values() -> None:
+    profile_payload = _profile().model_dump()
+    profile_payload.update(
+        {
+            "tax_regime_applies": "false",
+            "submission_deadline_business_days": True,
+            "routine_processing_max_vnd": "5000000",
+            "non_cash_evidence_threshold_vnd": True,
+            "non_cash_rule_is_conditional": "true",
+            "no_self_approval": "true",
+            "agent_can_approve": "false",
+            "agent_can_reject": "false",
+            "agent_can_transfer_money": "false",
+            "raw_ocr_retention_days": "30",
+        }
+    )
+    with pytest.raises(ValueError):
+        OrganizationProfile.model_validate(profile_payload)
+
+    with pytest.raises(ValueError):
+        ExpenseItem(
+            line_id="LINE-001",
+            vendor="Synthetic Vendor",
+            transaction_date=date(2026, 9, 15),
+            purpose_code="PRINT",
+            description="Synthetic printing",
+            category="printing",
+            amount_vnd=True,
+            tax_amount_vnd="0",
+            payment_method="CARD",
+            evidence_ids=("EVD-001",),
+            suspicion_flags=(),
+        )
+
+    with pytest.raises(ValueError):
+        Evidence(
+            evidence_id="EVD-001",
+            type="INVOICE",
+            file_hash="sha256-synthetic",
+            readable="true",
+            verified="true",
+            amount_vnd=True,
+        )
+
+    case_payload = ReimbursementCase(
+        case_id="CASE-001",
+        flow_type=FlowType.MEMBER_PAID,
+        requester=PersonRef(
+            person_id="P-001", display_name="Synthetic Member", role="MEMBER"
+        ),
+        submitted_at=datetime(2026, 9, 16, tzinfo=UTC),
+        task_or_event="Synthetic event",
+        event_end_date=date(2026, 9, 15),
+        purpose="Synthetic printing",
+        budget_code="BUDGET-001",
+        approved_budget_vnd=1_000_000,
+        remaining_budget_vnd=1_000_000,
+        expense_items=(
+            {
+                "line_id": "LINE-001",
+                "vendor": "Synthetic Vendor",
+                "transaction_date": "2026-09-15",
+                "purpose_code": "PRINT",
+                "description": "Synthetic printing",
+                "category": "printing",
+                "amount_vnd": 850_000,
+                "payment_method": "CARD",
+                "evidence_ids": ["EVD-001"],
+                "suspicion_flags": [],
+            },
+        ),
+        evidence=(
+            {
+                "evidence_id": "EVD-001",
+                "type": "INVOICE",
+                "file_hash": "sha256-synthetic",
+                "readable": True,
+                "verified": True,
+            },
+        ),
+        declared_total_vnd=850_000,
+        reimbursement_account={
+            "account_name": "Synthetic Member",
+            "bank_name": "Synthetic Bank",
+            "masked_account_number": "***0001",
+        },
+        paused=False,
+    ).model_dump()
+    case_payload.update(
+        {
+            "approved_budget_vnd": True,
+            "remaining_budget_vnd": "1000000",
+            "flow_type": "ADVANCE_SETTLEMENT",
+            "advance_reference": "ADV-001",
+            "advance_amount_vnd": True,
+            "declared_total_vnd": True,
+            "non_cash_evidence_verified": "false",
+            "submitted_business_days_after_end": "1",
+            "paused": "false",
+        }
+    )
+    with pytest.raises(ValueError):
+        ReimbursementCase.model_validate(case_payload)
+
+    outcome_payload = _outcome().model_dump()
+    outcome_payload.update(
+        {
+            "eligible_total_vnd": True,
+            "amount_to_return_vnd": "0",
+            "additional_payment_vnd": True,
+            "reimbursement_amount_vnd": "850000",
+        }
+    )
+    with pytest.raises(ValueError):
+        ProcessingOutcome.model_validate(outcome_payload)
+
 
 def test_v1_packages_import_without_legacy_or_infrastructure_modules() -> None:
     probe = """
@@ -187,10 +337,9 @@ from app.persistence.reimbursements import (
     ControlEventRepository,
     OutcomeRepository,
 )
-from app.policy.reimbursement import PolicyEvaluator, evaluate
+from app.policy.reimbursement import evaluate
 from app.security import AuthenticatedActor, IdentityProvider
 
-assert inspect.isclass(PolicyEvaluator)
 assert inspect.isclass(ReimbursementProcessingUseCase)
 assert inspect.isclass(CaseRepository)
 assert inspect.isclass(AuditEventRepository)

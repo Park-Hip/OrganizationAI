@@ -6,8 +6,6 @@ implementation without changing the domain or infrastructure boundary.
 
 from __future__ import annotations
 
-from typing import Protocol
-
 from app.domain.reimbursement import (
     ControlState,
     OrganizationProfile,
@@ -15,19 +13,6 @@ from app.domain.reimbursement import (
     ProcessingPacket,
     ReimbursementCase,
 )
-
-
-class PolicyEvaluator(Protocol):
-    """A pure reimbursement evaluator implementation."""
-
-    def __call__(
-        self,
-        case: ReimbursementCase,
-        profile_snapshot: OrganizationProfile,
-        policy_snapshot: PolicySnapshot,
-        control_state: ControlState,
-    ) -> ProcessingPacket:
-        """Return a packet without I/O, authorization, or payment behavior."""
 
 
 def evaluate(

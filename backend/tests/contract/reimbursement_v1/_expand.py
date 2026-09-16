@@ -20,7 +20,7 @@ from typing import Any
 import jsonschema
 from _artifacts import FIXTURE_SCHEMA
 
-PROSE_FIELDS = {"purpose", "task_or_event"}
+PROSE_FIELDS = {"purpose"}
 FACT_FLAG_MAP = {"vendor_identity": "VENDOR_IDENTITY_UNVERIFIED"}
 FIXTURE_VALIDATOR = jsonschema.Draft202012Validator(
     FIXTURE_SCHEMA, format_checker=jsonschema.FormatChecker()
@@ -42,11 +42,53 @@ def structural_input(concise: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in concise.items() if key not in PROSE_FIELDS}
 
 
+def normalize_concise_input(concise: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(concise)
+    normalized.setdefault("requester_id", "P-001")
+    normalized.setdefault("proposed_approver_id", "P-002")
+    normalized.setdefault("task_or_event", "EVT-SYN-001")
+    normalized.setdefault("purpose", "Chi cho hoat dong cau lac bo (tong hop)")
+    normalized.setdefault("event_end_date", _DEFAULT_EVENT_END_DATE)
+    normalized.setdefault("submitted_at", _DEFAULT_SUBMITTED_AT)
+    normalized.setdefault("days_late", 0)
+    normalized.setdefault("conflict", False)
+    normalized.setdefault("paused", False)
+    normalized.setdefault("duplicate_check", "NOT_RUN")
+
+    if normalized["conflict"]:
+        normalized["proposed_approver_id"] = normalized["requester_id"]
+
+    budget = normalized.setdefault("budget", {})
+    budget.setdefault("approved_vnd", _DEFAULT_APPROVED_BUDGET)
+    budget.setdefault("remaining_vnd", _DEFAULT_REMAINING_BUDGET)
+
+    expense = normalized["expense"]
+    if "items" in expense:
+        for item in expense["items"]:
+            item.setdefault("payment_method", "BANK_TRANSFER")
+    else:
+        expense.setdefault("vendor", "V-SYN-001")
+        expense.setdefault("transaction_date", _DEFAULT_TRANSACTION_DATE)
+        expense.setdefault("purpose_code", "PURP-SYN")
+        expense.setdefault("payment_method", "BANK_TRANSFER")
+
+    evidence = normalized.setdefault("evidence", {})
+    evidence.setdefault("readable", True)
+    evidence.setdefault("ocr_confidence", None)
+    evidence.setdefault("verified", True)
+    evidence.setdefault("payment_proof", True)
+    evidence.setdefault("non_cash_verified", _payment_is_non_cash(expense))
+    evidence.setdefault("prior_approval_present", False)
+    evidence.setdefault("event_link", True)
+
+    return normalized
+
+
 def snapshot_digest(
     concise: dict[str, Any], profile: dict[str, Any], policy_version: str
 ) -> str:
     snapshot = {
-        "input": structural_input(concise),
+        "input": structural_input(normalize_concise_input(concise)),
         "policy_version": policy_version,
         "profile_id": profile["profile_id"],
         "profile_version": profile["profile_version"],
@@ -327,7 +369,7 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
             "masked_account_number": "*****0001",
         },
         "proposed_approver": _person(proposed_id, profile["roles"]["approver_within_authority"]),
-        "duplicate_check": concise["duplicate_check"],
+        "duplicate_check": concise.get("duplicate_check", "NOT_RUN"),
         "submitted_business_days_after_end": days_late,
         "paused": paused,
     }

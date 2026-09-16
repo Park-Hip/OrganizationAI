@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://organizationai.example/schemas/reimbursement-fixture.schema.json",
-  "$comment": "Versioned concise fixture-input schema (v1.2.0). A fixture input expands deterministically into a full reimbursement envelope. The expander is data-driven and never branches on fixture id, title, or free-text prose (see ADR-007 and expansion_spec.md).",
+  "$comment": "Versioned concise fixture-input schema (v1.2.0). A fixture input expands deterministically into a pre-evaluation reimbursement input snapshot. The expander is data-driven and never branches on fixture id, title, or free-text prose (see ADR-007 and expansion_spec.md).",
   "title": "OrganizationAI Reimbursement Concise Fixture Input (v1.2.0)",
   "type": "object",
   "additionalProperties": false,
-  "required": ["flow_type", "expense", "duplicate_check"],
+  "required": ["flow_type", "expense"],
   "properties": {
     "flow_type": {"enum": ["ADVANCE_SETTLEMENT", "MEMBER_PAID"]},
     "requester_id": {"type": "string", "minLength": 1},
@@ -48,11 +48,6 @@
     "ConciseBudget": {
       "type": "object",
       "additionalProperties": false,
-      "anyOf": [
-        {"required": ["approved_vnd", "remaining_vnd"]},
-        {"required": ["approved_vnd"]},
-        {"required": ["remaining_vnd"]}
-      ],
       "properties": {
         "approved_vnd": {"$ref": "#/$defs/Money"},
         "remaining_vnd": {"$ref": "#/$defs/Money"}

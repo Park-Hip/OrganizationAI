@@ -27,6 +27,10 @@
       "then": {"not": {"anyOf": [{"required": ["processing_outcome"]}, {"required": ["escalation"]}]}}
     },
     {
+      "if": {"properties": {"case": {"properties": {"paused": {"const": true}}, "required": ["paused"]}}, "required": ["case"]},
+      "then": {"properties": {"control_state": {"const": "PAUSED"}}, "required": ["control_state"]}
+    },
+    {
       "$comment": "An ESCALATED outcome must carry exactly one structured escalation.",
       "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ESCALATED"}}, "required": ["processing_result"]}}, "required": ["processing_outcome"]},
       "then": {"required": ["escalation"]}

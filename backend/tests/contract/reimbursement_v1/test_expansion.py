@@ -84,6 +84,19 @@ def test_expansion_binds_generated_identifiers_to_the_full_snapshot() -> None:
     assert current["audit_events"][0]["input_hash"] != different_policy["audit_events"][0]["input_hash"]
 
 
+def test_expansion_normalizes_defaulted_input_before_hashing() -> None:
+    concise = next(
+        case["input"] for case in TEST_CASES["cases"] if "days_late" not in case["input"]
+    )
+    explicit_defaults = dict(concise, days_late=0)
+
+    implicit = expand(concise, PROFILE, POLICY_VERSION)
+    explicit = expand(explicit_defaults, PROFILE, POLICY_VERSION)
+
+    assert implicit["case"]["case_id"] == explicit["case"]["case_id"]
+    assert implicit["audit_events"][0]["input_hash"] == explicit["audit_events"][0]["input_hash"]
+
+
 def test_expansion_rejects_hybrid_expense_input() -> None:
     hybrid = {
         "flow_type": "MEMBER_PAID",
@@ -107,15 +120,9 @@ def test_expansion_rejects_hybrid_expense_input() -> None:
         expand(hybrid, PROFILE, POLICY_VERSION)
 
 
-def test_expander_receives_no_fixture_metadata() -> None:
-    metadata_keys = {"id", "group", "title", "note", "verify"}
-    for case in TEST_CASES["cases"]:
-        assert metadata_keys.isdisjoint(case["input"])
-
-
 def test_expansion_is_independent_of_free_text_prose() -> None:
     base = TEST_CASES["cases"][0]["input"]
-    changed = dict(base, purpose="Một mục đích hoàn toàn khác", task_or_event="EVT-KHAC")
+    changed = dict(base, purpose="Một mục đích hoàn toàn khác")
 
     envelope_a = expand(base, PROFILE, POLICY_VERSION)
     envelope_b = expand(changed, PROFILE, POLICY_VERSION)
@@ -128,11 +135,18 @@ def test_expansion_is_independent_of_free_text_prose() -> None:
     structural_a = deepcopy(envelope_a)
     structural_b = deepcopy(envelope_b)
     del structural_a["case"]["purpose"]
-    del structural_a["case"]["task_or_event"]
     del structural_b["case"]["purpose"]
-    del structural_b["case"]["task_or_event"]
     assert structural_a == structural_b
     assert envelope_b["case"]["purpose"] == changed["purpose"]
+
+
+def test_expansion_maps_absent_duplicate_check_to_not_run() -> None:
+    concise = dict(TEST_CASES["cases"][0]["input"])
+    del concise["duplicate_check"]
+
+    envelope = expand(concise, PROFILE, POLICY_VERSION)
+
+    assert envelope["case"]["duplicate_check"] == "NOT_RUN"
 
 
 def test_non_cash_payment_proof_uses_non_cash_verification() -> None:
@@ -192,6 +206,18 @@ def test_schema_enforces_routine_calculation_fields_by_flow() -> None:
 
     assert list(_envelope_validator().iter_errors(member_envelope))
     assert list(_envelope_validator().iter_errors(advance_envelope))
+
+
+def test_schema_rejects_active_processing_for_a_paused_case() -> None:
+    routine = next(
+        case
+        for case in TEST_CASES["cases"]
+        if case["expected"].get("processing_result") == "ROUTINE_PROCESSED"
+    )
+    envelope = materialize_envelope(routine["input"], PROFILE, POLICY_VERSION, routine["expected"])
+    envelope["case"]["paused"] = True
+
+    assert list(_envelope_validator().iter_errors(envelope))
 
 
 def test_expansion_preserves_confirmed_duplicate_reference() -> None:

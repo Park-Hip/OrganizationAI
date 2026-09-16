@@ -12,7 +12,7 @@ Only the policy evaluator produces the complete evaluated envelope with `process
 ## 1. Invariants
 
 1. Expansion is deterministic. The same concise input always produces the same input snapshot.
-2. Expansion never depends on the fixture id, title, group, note, or any free-text prose. Two fixtures with identical structural input and different ids/titles expand to byte-identical envelopes.
+2. Expansion never depends on the fixture id, title, group, note, or free-text `purpose`. `task_or_event` is a structural event identifier. Two fixtures with identical structural input and different metadata or purpose expand to byte-identical input snapshots.
 3. The expander optionally applies only the data-driven field mappings below. It never hard-codes a category price, a real profile value, a real person, or an organization decision.
 4. Structural inputs that fail [reimbursement-fixture.schema.json](reimbursement-fixture.schema.json) are rejected before expansion. The expander never silently reinterprets malformed input.
 5. A valid structural input that describes missing, unreadable, conflicting, or unknown business facts expands into a structurally valid case whose flags represent those facts. The policy engine, not the expander, is responsible for turning them into an escalation.
@@ -52,7 +52,7 @@ Only the policy evaluator produces the complete evaluated envelope with `process
 
 - `requester` becomes `PersonRef{person_id: requester_id, display_name, role: profile.roles.requester}`. The display name is deterministic and synthetic: `Synthetic <person_id>`.
 - `proposed_approver` becomes `PersonRef{person_id: proposed_approver_id, display_name, role: profile.roles.approver_within_authority}`.
-- `task_or_event`, `purpose`, `event_end_date`, `submitted_at` map directly.
+- `task_or_event`, `purpose`, `event_end_date`, `submitted_at` map directly. `task_or_event` participates in the deterministic identity as the event identifier; `purpose` does not.
 - `budget.approved_vnd` → `approved_budget_vnd`; `budget.remaining_vnd` → `remaining_budget_vnd`. A stable synthetic `budget_code` is generated.
 - `days_late` → `submitted_business_days_after_end`.
 
@@ -113,7 +113,7 @@ The determinism key is:
 sha256(canonical structural input + policy_version + organization_profile.profile_id + organization_profile.profile_version)
 ```
 
-Prose, titles, notes, and the fixture id are excluded from the digest.
+Purpose, titles, notes, and the fixture id are excluded from the digest.
 
 ## 7. Compliance test
 

@@ -1,14 +1,14 @@
 {
-  "verify_suite_id": "TASK-A-QUICK-VERIFY-1.1.0",
-  "policy_version": "1.1.0",
+  "verify_suite_id": "TASK-A-QUICK-VERIFY-1.2.0",
+  "policy_version": "1.2.0",
   "source_suite": "test_cases.json",
-  "determinism_key": ["normalized_input_hash", "policy_version", "organization_profile.profile_id"],
+  "determinism_key": ["normalized_structural_input", "policy_version", "organization_profile.profile_id", "organization_profile.profile_version"],
   "cases": [
     {"case_id": "TC-R03", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
     {"case_id": "TC-R04", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
     {"case_id": "TC-R06", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
-    {"case_id": "TC-F01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "FACT_UNKNOWN", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "required_question_facts": ["case_id", "evidence", "known_amount", "requested_action", "response_format", "resume_action"]},
-    {"case_id": "TC-A01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "AUTHORITY_REQUIRED", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "required_question_facts": ["case_id", "amount", "threshold", "approver_role", "approve_or_reject", "reason", "resume_action"]}
+    {"case_id": "TC-F01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "FACT_UNKNOWN", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "expected_addressee_role": "MEMBER", "required_question_facts": ["case_id", "evidence", "known_amount", "requested_action", "response_format", "resume_action"]},
+    {"case_id": "TC-A01", "expected_processing_result": "ESCALATED", "expected_escalation_type": "AUTHORITY_REQUIRED", "expected_approval_status": "PENDING_HUMAN_APPROVAL", "expected_addressee_role": "CLUB_CHAIR", "required_question_facts": ["case_id", "amount", "threshold", "approver_role", "approve_or_reject", "reason", "resume_action"]}
   ],
   "acceptance": {
     "routine_processed": {"numerator": 3, "denominator": 3, "required_rate": 1.0},

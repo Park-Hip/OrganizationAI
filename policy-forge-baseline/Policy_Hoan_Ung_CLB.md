@@ -9,7 +9,7 @@ Nguồn quy tắc cho agent hỗ trợ thủ quỹ — Task A
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Mã Policy | POL-REIMB-CLB |
-| Phiên bản | 1.1.0 |
+| Phiên bản | 1.2.0 |
 | Ngày rà soát nguồn | 12/09/2026 |
 | Trạng thái | Mẫu chờ đơn vị chủ quản phê duyệt |
 | Đơn vị chủ quản | CẦN XÁC NHẬN TRƯỚC KHI PILOT |
@@ -58,7 +58,7 @@ Policy chuẩn hóa cách tiếp nhận, kiểm tra, tính toán, phân loại k
 | Không khẳng định khi nghi vấn | Bất kỳ dữ liệu mờ, mâu thuẫn, thiếu hoặc nghi trùng đều dẫn đến ESCALATED / FACT_UNKNOWN. |
 | Tách xử lý và phê duyệt | ROUTINE_PROCESSED chỉ nghĩa là agent đã kiểm tra, tính toán và lập gói; approval_status luôn là PENDING_HUMAN_APPROVAL. |
 | Tách nhiệm vụ | Người đề nghị không tự phê duyệt hồ sơ của mình; xung đột lợi ích phải chuyển người độc lập. |
-| Truy vết | Mọi đầu vào, quy tắc, bằng chứng, kết quả xử lý, chuyển tiếp, pause, override và undo phải có audit event. |
+| Truy vết | Mọi đầu vào, quy tắc, bằng chứng, kết quả xử lý, chuyển tiếp, pause, override, undo, quyết định con người và settlement phải có audit event. |
 
 ### 1.3 Thuật ngữ
 
@@ -112,7 +112,7 @@ Tương thích mẫu: trường thông tin trong phụ lục được thiết k�
 | Tổng > 5.000.000 | Chủ nhiệm | ESCALATED / AUTHORITY_REQUIRED. |
 | Vượt ngân sách / xung đột | Người có thẩm quyền độc lập | ESCALATED / AUTHORITY_REQUIRED. |
 | Dữ kiện chưa rõ | Người đề nghị/nhà cung cấp/thủ quỹ | ESCALATED / FACT_UNKNOWN; trả lời có bằng chứng. |
-| Ngoài Policy | Chủ nhiệm +/hoặc cố vấn theo danh mục | ESCALATED / OUT_OF_POLICY; người có thẩm quyền xem xét ngoại lệ nếu được phép. |
+| Ngoài Policy | CLUB_CHAIR | ESCALATED / OUT_OF_POLICY; riêng rượu/bia chỉ chuyển CLUB_CHAIR sau tham vấn PARENT_ADVISOR được ghi audit, là điều kiện tiên quyết chứ không phải quyết định thứ hai của agent. |
 | Trùng đã thanh toán, xác minh chắc chắn | Người có thẩm quyền | ESCALATED / OUT_OF_POLICY; agent không tự từ chối. |
 
 ## 4. Thành phần hồ sơ tiêu chuẩn
@@ -162,9 +162,9 @@ Tương thích mẫu: trường thông tin trong phụ lục được thiết k�
 | Tín hiệu | Kết quả / loại | Hành động |
 | --- | --- | --- |
 | Tệp mờ/thiếu/mâu thuẫn/nghi trùng | ESCALATED / FACT_UNKNOWN | Hỏi đúng dữ kiện, nêu bằng chứng liên quan, chờ trả lời. |
-| Danh mục ngoài phạm vi | ESCALATED / OUT_OF_POLICY | Hỏi có xin ngoại lệ hay rút khoản chi; không tự động chấp nhận. |
+| Danh mục ngoài phạm vi, không gồm rượu/bia | ESCALATED / OUT_OF_POLICY | Chuyển đúng một CLUB_CHAIR để quyết định hướng xử lý; agent không tự động chấp nhận. |
 | Vượt ngưỡng/ngân sách/xung đột | ESCALATED / AUTHORITY_REQUIRED | Gửi đúng người có thẩm quyền với lựa chọn rõ ràng. |
-| Đã xác minh trùng và đã thanh toán | ESCALATED / OUT_OF_POLICY | Chuyển người có thẩm quyền xác nhận hướng xử lý; agent không tự từ chối. |
+| Đã xác minh trùng và đã thanh toán | ESCALATED / OUT_OF_POLICY | Chuyển đúng một CLUB_CHAIR xác nhận hướng xử lý; agent không tự từ chối. |
 | Lệnh dừng hợp lệ | control_state = PAUSED | Dừng vận hành và ghi audit; đây không phải nhãn dự đoán. |
 
 ## 6. Quy tắc phân loại đầu ra và thứ tự ưu tiên
@@ -196,8 +196,9 @@ Tương thích mẫu: trường thông tin trong phụ lục được thiết k�
 | --- | --- | --- |
 | Được phép | Địa điểm, vận chuyển, in ấn, vật tư, truyền thông, ăn uống đã duyệt, dịch vụ đã duyệt | Tiếp tục nếu hồ sơ đầy đủ. |
 | Có điều kiện | Quà tặng, thù lao, thiết bị, nộp muộn | ESCALATED / AUTHORITY_REQUIRED nếu thiếu phê duyệt/chứng từ theo OrganizationProfile. |
-| Ngoài Policy | Rượu/bia, thuốc lá, chi cá nhân | ESCALATED / OUT_OF_POLICY; rượu/bia chỉ do người có thẩm quyền xem xét ngoại lệ khi pháp luật cho phép. |
-| Bị pháp luật cấm | Hàng hóa/dịch vụ bất hợp pháp | ESCALATED / OUT_OF_POLICY; không ngoại lệ, phê duyệt nội bộ không thể hợp thức hóa. |
+| Ngoài Policy, không gồm rượu/bia | Thuốc lá, chi cá nhân và danh mục không được công nhận | ESCALATED / OUT_OF_POLICY đến đúng một CLUB_CHAIR. |
+| Rượu/bia | Rượu/bia | ESCALATED / OUT_OF_POLICY đến đúng một CLUB_CHAIR sau khi có tham vấn PARENT_ADVISOR được ghi audit; tham vấn là điều kiện tiên quyết, không phải quyết định thứ hai của agent. |
+| Bị pháp luật cấm | Hàng hóa/dịch vụ bất hợp pháp | ESCALATED / OUT_OF_POLICY đến đúng một CLUB_CHAIR; không ngoại lệ, phê duyệt nội bộ không thể hợp thức hóa. |
 
 ### 7.1 Mặc định có thể cấu hình
 
@@ -282,6 +283,8 @@ AUTHORITY_REQUIRED — Hồ sơ TC-A01 có tổng đã xác minh 5.000.001 đồ
 | PAUSED / RESUMED | Người có thẩm quyền, phạm vi, lý do, thời gian hiệu lực. |
 | OVERRIDDEN | Người thực hiện, vai trò, lý do, kết quả trước; không cho override luật. |
 | UNDONE | Sự kiện bị hoàn tác, người/lý do; tạo sự kiện bù, không xóa lịch sử. |
+| HUMAN_DECISION | Actor là con người, vai trò, lý do, kết quả trước và quyết định. |
+| SETTLEMENT | Actor là con người, vai trò, lý do, sự kiện quyết định trước đó và bằng chứng settlement. |
 
 ### 10.1 Bất biến kiểm soát
 
@@ -331,7 +334,7 @@ Mỗi kết quả xử lý phải nêu: processing_result; escalation_type; appr
 | Quy tắc | policy_rules.yaml | ID, priority, source, condition, result, testable. |
 | Kết quả xử lý | ProcessingOutcome | processing_result, escalation_type, approval_status, số tiền, rule IDs, evidence và giải thích. |
 | Chuyển tiếp | Escalation | Ba loại; câu hỏi đủ ngữ cảnh; định dạng trả lời; resume action. |
-| Truy vết | AuditEvent | Append-only; policy/input hash; pause/override/undo. |
+| Truy vết | AuditEvent | Append-only; policy/input hash; pause/override/undo/HUMAN_DECISION/SETTLEMENT. |
 
 ### 12.1 Verify bắt buộc
 
@@ -348,7 +351,7 @@ Mỗi kết quả xử lý phải nêu: processing_result; escalation_type; appr
 
 - ☐ Đơn vị chủ quản và chế độ kế toán/thuế đã được xác nhận bằng văn bản.
 - ☐ Ngưỡng, ngân sách, danh mục, vai trò và SLA đã được cấu hình/phê duyệt.
-- ☐ Đã kiểm thử 16 ca tổng hợp và 5 ca Verify; đã kiểm thử quyền truy cập và pause.
+- ☐ Đã kiểm thử 29 ca tổng hợp và 5 ca Verify; đã kiểm thử quyền truy cập và pause.
 - ☐ Đã có quy trình khiếu nại, sửa sai, hoàn tác, lưu trữ và ứng phó sự cố.
 - ☐ Đã đào tạo thủ quỹ/người duyệt rằng ROUTINE_PROCESSED không phải phê duyệt hoặc lệnh chuyển tiền.
 

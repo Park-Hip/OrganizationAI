@@ -1,7 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://organizationai.example/schemas/reimbursement.schema.json",
-  "title": "OrganizationAI Reimbursement Processing Envelope",
+  "$comment": "OrganizationAI reimbursement envelope schema. Contract version 1.2.0. Synthetic-pilot delivery only; parent_organization and accounting_regime remain TO_BE_CONFIRMED.",
+  "title": "OrganizationAI Reimbursement Processing Envelope (v1.2.0)",
   "type": "object",
   "additionalProperties": false,
   "required": ["policy_version", "organization_profile", "case", "control_state", "audit_events"],
@@ -16,24 +17,34 @@
   },
   "allOf": [
     {
+      "$comment": "An ACTIVE envelope must always carry a processing outcome.",
       "if": {"properties": {"control_state": {"const": "ACTIVE"}}, "required": ["control_state"]},
       "then": {"required": ["processing_outcome"]}
     },
     {
+      "$comment": "A PAUSED envelope records a halt and never carries an outcome or escalation.",
       "if": {"properties": {"control_state": {"const": "PAUSED"}}, "required": ["control_state"]},
       "then": {"not": {"anyOf": [{"required": ["processing_outcome"]}, {"required": ["escalation"]}]}}
     },
     {
+      "$comment": "An ESCALATED outcome must carry exactly one structured escalation.",
       "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ESCALATED"}}, "required": ["processing_result"]}}, "required": ["processing_outcome"]},
       "then": {"required": ["escalation"]}
     },
     {
+      "$comment": "A ROUTINE_PROCESSED outcome has no escalation object.",
       "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ROUTINE_PROCESSED"}}, "required": ["processing_result"]}}, "required": ["processing_outcome"]},
       "then": {"not": {"required": ["escalation"]}}
+    },
+    {
+      "$comment": "When escalated, processing_outcome.escalation_type and escalation.type must be the same enum value. This equality is asserted by the contract-validation suite.",
+      "if": {"properties": {"processing_outcome": {"properties": {"processing_result": {"const": "ESCALATED"}}, "required": ["processing_result", "escalation_type"]}}, "required": ["processing_outcome"]},
+      "then": {"required": ["escalation"]}
     }
   ],
   "$defs": {
-    "Money": {"type": "integer", "minimum": 0, "description": "Số tiền nguyên VND"},
+    "Money": {"type": "integer", "minimum": 0, "description": "Số tiền nguyên VND, không âm"},
+    "Version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "PersonRef": {
       "type": "object", "additionalProperties": false,
       "required": ["person_id", "display_name", "role"],
@@ -41,29 +52,61 @@
         "person_id": {"type": "string", "minLength": 1},
         "display_name": {"type": "string", "minLength": 1},
         "role": {"type": "string", "minLength": 1},
-        "contact": {"type": "string"}
+        "contact": {"type": "string", "description": "Optional, minimized contact channel."}
+      }
+    },
+    "RoleSet": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requester", "preparer", "approver_within_authority", "approver_over_threshold", "exception_approvers", "payment_executor"],
+      "properties": {
+        "requester": {"type": "string"},
+        "preparer": {"type": "string"},
+        "approver_within_authority": {"type": "string"},
+        "approver_over_threshold": {"type": "string"},
+        "exception_approvers": {"type": "array", "items": {"type": "string"}},
+        "payment_executor": {"type": "string"}
       }
     },
     "OrganizationProfile": {
       "type": "object", "additionalProperties": false,
-      "required": ["profile_id", "parent_organization", "accounting_regime", "tax_regime_applies", "currency", "routine_processing_max_vnd", "submission_deadline_business_days", "non_cash_evidence_threshold_vnd", "no_self_approval", "agent_can_approve", "agent_can_reject", "agent_can_transfer_money"],
+      "required": [
+        "profile_id", "profile_version", "policy_version", "owner", "effective_date",
+        "parent_organization", "accounting_regime", "tax_regime_applies", "currency",
+        "submission_deadline_business_days", "routine_processing_max_vnd",
+        "authority_threshold_operator", "non_cash_evidence_threshold_vnd",
+        "non_cash_rule_is_conditional", "aggregation_keys",
+        "allowed_categories", "conditional_categories", "prohibited_categories",
+        "legally_prohibited_categories", "roles", "no_self_approval",
+        "agent_can_approve", "agent_can_reject", "agent_can_transfer_money",
+        "raw_ocr_retention_days", "official_record_retention"
+      ],
       "properties": {
         "profile_id": {"type": "string"},
+        "profile_version": {"$ref": "#/$defs/Version"},
+        "policy_version": {"$ref": "#/$defs/Version"},
+        "owner": {"type": "string", "description": "Profile owner; TO_BE_CONFIRMED for the synthetic pilot."},
+        "effective_date": {"type": ["string", "null"], "format": "date", "description": "Effective date once approved; null until the real-operation gate."},
         "parent_organization": {"type": "string"},
         "accounting_regime": {"type": "string"},
-        "tax_regime_applies": {"type": "boolean"},
+        "tax_regime_applies": {"type": "boolean", "description": "Conditional tax-evidence rule is active when true."},
         "currency": {"const": "VND"},
-        "routine_processing_max_vnd": {"$ref": "#/$defs/Money"},
         "submission_deadline_business_days": {"type": "integer", "minimum": 0},
+        "routine_processing_max_vnd": {"$ref": "#/$defs/Money"},
+        "authority_threshold_operator": {"enum": ["greater_than", "greater_than_or_equal"], "description": "Operator applied to routine_processing_max_vnd."},
         "non_cash_evidence_threshold_vnd": {"$ref": "#/$defs/Money"},
+        "non_cash_rule_is_conditional": {"type": "boolean", "description": "Non-cash evidence threshold applies only when tax_regime_applies is true."},
         "aggregation_keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
         "allowed_categories": {"type": "array", "items": {"type": "string"}},
         "conditional_categories": {"type": "array", "items": {"type": "string"}},
-        "prohibited_categories": {"type": "array", "items": {"type": "string"}},
+        "prohibited_categories": {"type": "array", "items": {"type": "string"}, "description": "Internal-policy prohibited categories; excludes legally prohibited categories."},
+        "legally_prohibited_categories": {"type": "array", "items": {"type": "string"}, "description": "Categories prohibited by applicable law; mandatory, never overridable."},
+        "roles": {"$ref": "#/$defs/RoleSet"},
         "no_self_approval": {"const": true},
         "agent_can_approve": {"const": false},
         "agent_can_reject": {"const": false},
-        "agent_can_transfer_money": {"const": false}
+        "agent_can_transfer_money": {"const": false},
+        "raw_ocr_retention_days": {"type": "integer", "minimum": 0},
+        "official_record_retention": {"type": "string", "description": "Retention instruction or FOLLOW_PARENT_POLICY_AND_LAW."}
       }
     },
     "Evidence": {
@@ -79,7 +122,8 @@
         "document_number": {"type": "string"},
         "document_date": {"type": "string", "format": "date"},
         "amount_vnd": {"$ref": "#/$defs/Money"},
-        "notes": {"type": "string"}
+        "notes": {"type": "string"},
+        "approval_decision_ids": {"type": "array", "items": {"type": "string"}, "description": "Provenance: prior human approval decision IDs this APPROVAL evidence substantiates."}
       }
     },
     "ExpenseItem": {
@@ -103,13 +147,14 @@
     },
     "ReimbursementCase": {
       "type": "object", "additionalProperties": false,
-      "required": ["case_id", "flow_type", "requester", "submitted_at", "task_or_event", "purpose", "budget_code", "approved_budget_vnd", "remaining_budget_vnd", "expense_items", "evidence", "declared_total_vnd", "reimbursement_account", "paused"],
+      "required": ["case_id", "flow_type", "requester", "submitted_at", "task_or_event", "event_end_date", "purpose", "budget_code", "approved_budget_vnd", "remaining_budget_vnd", "expense_items", "evidence", "declared_total_vnd", "reimbursement_account", "paused"],
       "properties": {
         "case_id": {"type": "string", "minLength": 1},
         "flow_type": {"enum": ["ADVANCE_SETTLEMENT", "MEMBER_PAID"]},
         "requester": {"$ref": "#/$defs/PersonRef"},
         "submitted_at": {"type": "string", "format": "date-time"},
         "task_or_event": {"type": "string", "minLength": 1},
+        "event_end_date": {"type": "string", "format": "date", "description": "Date the task/event ended; deadline is computed from this date."},
         "purpose": {"type": "string", "minLength": 1},
         "budget_code": {"type": "string"},
         "approved_budget_vnd": {"$ref": "#/$defs/Money"},
@@ -120,6 +165,7 @@
         "expense_items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ExpenseItem"}},
         "evidence": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/Evidence"}},
         "declared_total_vnd": {"$ref": "#/$defs/Money"},
+        "non_cash_evidence_verified": {"type": "boolean", "description": "True when verified non-cash payment evidence exists; absent or false means the conditional tax-evidence rule can escalate."},
         "reimbursement_account": {
           "type": "object", "additionalProperties": false,
           "required": ["account_name", "bank_name", "masked_account_number"],
@@ -129,12 +175,13 @@
           }
         },
         "proposed_approver": {"$ref": "#/$defs/PersonRef"},
-        "duplicate_check": {"enum": ["CLEAR", "SUSPECTED", "CONFIRMED_PAID", "NOT_RUN"]},
+        "duplicate_check": {"enum": ["CLEAR", "SUSPECTED", "CONFIRMED_PAID", "NOT_RUN"], "description": "Absent is treated as NOT_RUN by the evaluator and escalates safely."},
         "submitted_business_days_after_end": {"type": "integer", "minimum": 0},
         "paused": {"type": "boolean"}
       },
       "allOf": [
-        {"if": {"properties": {"flow_type": {"const": "ADVANCE_SETTLEMENT"}}}, "then": {"required": ["advance_reference", "advance_amount_vnd"]}}
+        {"if": {"properties": {"flow_type": {"const": "ADVANCE_SETTLEMENT"}}}, "then": {"required": ["advance_reference", "advance_amount_vnd"]}},
+        {"if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}}, "then": {"not": {"required": ["advance_reference", "advance_amount_vnd"]}}}
       ]
     },
     "Escalation": {
@@ -142,12 +189,24 @@
       "required": ["type", "addressee_role", "related_evidence", "known_facts", "specific_question", "response_format", "resume_action"],
       "properties": {
         "type": {"enum": ["FACT_UNKNOWN", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]},
-        "addressee_role": {"type": "string"},
+        "addressee_role": {"type": "string", "description": "Single role able to supply the fact or make the decision."},
         "related_evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "known_facts": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "specific_question": {"type": "string", "minLength": 20},
         "response_format": {"type": "string", "minLength": 5},
-        "resume_action": {"type": "string", "minLength": 10}
+        "resume_action": {"type": "string", "minLength": 10},
+        "prerequisite_consultations": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["role", "requirement"],
+            "properties": {
+              "role": {"type": "string"},
+              "requirement": {"type": "string", "description": "Auditable prerequisite, not a second agent decision."}
+            }
+          },
+          "description": "Optional prerequisite consultations (e.g. PARENT_ADVISOR consultation before the single addressee decides)."
+        }
       }
     },
     "ProcessingOutcome": {
@@ -159,8 +218,9 @@
         "escalation_type": {"type": ["string", "null"], "enum": [null, "FACT_UNKNOWN", "OUT_OF_POLICY", "AUTHORITY_REQUIRED"]},
         "approval_status": {"const": "PENDING_HUMAN_APPROVAL"},
         "eligible_total_vnd": {"$ref": "#/$defs/Money", "description": "Tổng đủ điều kiện đề xuất; không phải số tiền đã được phê duyệt"},
-        "amount_to_return_vnd": {"$ref": "#/$defs/Money"},
-        "additional_payment_vnd": {"$ref": "#/$defs/Money"},
+        "amount_to_return_vnd": {"$ref": "#/$defs/Money", "description": "ADVANCE_SETTLEMENT only."},
+        "additional_payment_vnd": {"$ref": "#/$defs/Money", "description": "ADVANCE_SETTLEMENT only."},
+        "reimbursement_amount_vnd": {"$ref": "#/$defs/Money", "description": "MEMBER_PAID only."},
         "triggered_rule_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
         "evidence_used": {"type": "array", "items": {"type": "string"}},
         "explanation_vi": {"type": "string", "minLength": 20},
@@ -171,7 +231,7 @@
           "if": {"properties": {"processing_result": {"const": "ROUTINE_PROCESSED"}}, "required": ["processing_result"]},
           "then": {
             "properties": {"escalation_type": {"const": null}},
-            "required": ["eligible_total_vnd", "amount_to_return_vnd", "additional_payment_vnd"]
+            "required": ["eligible_total_vnd"]
           }
         },
         {
@@ -190,15 +250,32 @@
         "actor_type": {"enum": ["AGENT", "HUMAN", "SYSTEM"]},
         "actor_role": {"type": "string"},
         "policy_version": {"type": "string"},
-        "event_type": {"enum": ["RECEIVED", "VALIDATED", "RULE_TRIGGERED", "CLASSIFIED", "PAUSED", "RESUMED", "OVERRIDDEN", "UNDONE"]},
+        "event_type": {"enum": ["RECEIVED", "VALIDATED", "RULE_TRIGGERED", "CLASSIFIED", "PAUSED", "RESUMED", "OVERRIDDEN", "UNDONE", "HUMAN_DECISION", "SETTLEMENT"]},
         "input_hash": {"type": "string", "minLength": 8},
         "triggered_rule_ids": {"type": "array", "items": {"type": "string"}},
         "outcome_id": {"type": "string"},
         "explanation": {"type": "string"},
         "reason": {"type": "string"},
+        "decision": {"type": "string", "description": "Required for HUMAN_DECISION events (e.g. APPROVE, REJECT, REQUEST_INFORMATION, ADJUST)."},
         "previous_outcome_id": {"type": "string"},
-        "target_audit_event_id": {"type": "string"}
-      }
+        "target_audit_event_id": {"type": "string"},
+        "predecessor_event_id": {"type": "string", "description": "Ordered predecessor event in the append-only history."},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}, "description": "Required for SETTLEMENT events."}
+      },
+      "allOf": [
+        {"if": {"properties": {"event_type": {"const": "PAUSED"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason"]}},
+        {"if": {"properties": {"event_type": {"const": "RESUMED"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason"]}},
+        {"if": {"properties": {"event_type": {"const": "OVERRIDDEN"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason", "previous_outcome_id"]}},
+        {"if": {"properties": {"event_type": {"const": "UNDONE"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason", "target_audit_event_id"]}},
+        {"if": {"properties": {"event_type": {"const": "HUMAN_DECISION"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason", "previous_outcome_id", "decision"]}},
+        {"if": {"properties": {"event_type": {"const": "SETTLEMENT"}}, "required": ["event_type"]},
+         "then": {"required": ["actor_role", "reason", "predecessor_event_id", "evidence_ids"]}}
+      ]
     }
   }
 }

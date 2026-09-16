@@ -1,4 +1,4 @@
-# Reimbursement System Contract v1.0
+# Reimbursement System Contract v1.2
 
 ## Document control
 
@@ -11,6 +11,10 @@
 - [03_reimbursement_policy.md](03_reimbursement_policy.md)
 
 **Canonical machine-readable schema:** [policy-forge-baseline/reimbursement.schema.json](../policy-forge-baseline/reimbursement.schema.json).
+
+**Canonical fixture-input schema:** [policy-forge-baseline/reimbursement-fixture.schema.json](../policy-forge-baseline/reimbursement-fixture.schema.json).
+
+**Expansion specification:** [policy-forge-baseline/expansion_spec.md](../policy-forge-baseline/expansion_spec.md).
 
 **Purpose:** Freeze the versioned data shapes, invariants, deterministic processing boundary, escalation handoff, audit requirements, and migration boundary for reimbursement processing. The policy document owns rule conditions and priorities; this contract owns how systems represent and preserve those decisions.
 
@@ -51,9 +55,9 @@ The profile is server-owned and snapshotted with every case. It configures polic
 
 | Field group | Required contract |
 | --- | --- |
-| Identity and applicability | `profile_id`, parent organization, accounting regime, policy/profile version, currency, and applicable tax-regime flag. |
+| Identity and applicability | `profile_id`, `profile_version`, `policy_version`, owner, effective date, parent organization, accounting regime, currency, and applicable tax-regime flag. |
 | Authority and timing | Routine-processing threshold, threshold operator, submission deadline, conditional non-cash-evidence threshold, and aggregation keys. |
-| Policy categories | Allowed, conditional, and prohibited category sets. |
+| Policy categories | Allowed, conditional, prohibited, and legally prohibited category sets. Legally prohibited categories are never overridable. |
 | Roles | Requester, preparer, within-authority approver, over-threshold approver, exception approvers, and payment executor. |
 | Safety controls | `no_self_approval: true`; `agent_can_approve: false`; `agent_can_reject: false`; `agent_can_transfer_money: false`. |
 | Retention | OCR-artifact retention and official-record retention instruction. |
@@ -74,7 +78,7 @@ The authorization boundary must enforce at minimum:
 
 ### 3.3 `Evidence`
 
-An evidence record contains `evidence_id`, type, file hash, readability, and verification state. It may also record OCR confidence, document number/date, amount, and notes.
+An evidence record contains `evidence_id`, type, file hash, readability, and verification state. It may also record OCR confidence, document number/date, amount, and notes. `APPROVAL` evidence may carry `approval_decision_ids` to preserve approval-to-evidence provenance.
 
 Permitted evidence types are `INVOICE`, `RECEIPT`, `PAYMENT_PROOF`, `APPROVAL`, `ADVANCE_RECORD`, and `OTHER`. The contract defines evidence metadata and references; it does not prescribe file-storage technology, OCR vendor, or receipt-review UI.
 
@@ -88,9 +92,9 @@ Related lines use the profile's aggregation keys before authority and conditiona
 
 | Field group | Contract |
 | --- | --- |
-| Identity and flow | Non-blank case ID; `flow_type` is `MEMBER_PAID` or `ADVANCE_SETTLEMENT`; requester and submitted time are required. |
+| Identity and flow | Non-blank case ID; `flow_type` is `MEMBER_PAID` or `ADVANCE_SETTLEMENT`; requester, submitted time, and task/event end date are required. |
 | Purpose and budget | Task/event, purpose, budget code, approved budget, remaining budget, and prior-approval references as applicable. |
-| Expense packet | One or more expense items, one or more evidence records, declared total, and a masked reimbursement account. |
+| Expense packet | One or more expense items, one or more evidence records, declared total, verified non-cash-evidence flag, and a masked reimbursement account. |
 | Review context | Proposed approver, duplicate-check state, submitted-business-days-after-end, and paused state where applicable. |
 | Advance-only fields | `ADVANCE_SETTLEMENT` requires an advance reference and advance amount. |
 
@@ -119,7 +123,7 @@ A processing outcome contains:
 | --- | --- |
 | Identity and result | Server-generated `outcome_id`; `processing_result` is `ROUTINE_PROCESSED` or `ESCALATED`; nullable `escalation_type`; fixed `approval_status: PENDING_HUMAN_APPROVAL`. |
 | Explanation | One or more triggered rule IDs, evidence references used, Vietnamese user-facing explanation, and server-generated creation time. |
-| Proposed calculations | `eligible_total_vnd`; for advances, `amount_to_return_vnd` and `additional_payment_vnd`; for member-paid cases, proposed reimbursement represented from eligible total. These are proposals, not authorization to settle. |
+| Proposed calculations | `eligible_total_vnd`; for advances, `amount_to_return_vnd` and `additional_payment_vnd`; for member-paid cases, `reimbursement_amount_vnd`. These are proposals, not authorization to settle. |
 
 A routine result has a null escalation type and no escalation object. An escalated result has exactly one of `FACT_UNKNOWN`, `OUT_OF_POLICY`, or `AUTHORITY_REQUIRED` and must include an escalation object.
 
@@ -136,6 +140,7 @@ Every escalation has all of the following required fields:
 | `specific_question` | One concrete, answerable question; not a generic request to “check.” |
 | `response_format` | The required evidence, choice, or response shape. |
 | `resume_action` | The rule or processing action to run after a valid response. |
+| `prerequisite_consultations` | Optional auditable prerequisite consultations (for example a `PARENT_ADVISOR` consultation before the single `CLUB_CHAIR` decision). A prerequisite is never a second agent decision. |
 
 ### 5.3 Public Verify vocabulary and alcohol handoff
 
@@ -153,8 +158,14 @@ The minimum event vocabulary is:
 
 ```text
 RECEIVED → VALIDATED → RULE_TRIGGERED → CLASSIFIED
-PAUSED / RESUMED / OVERRIDDEN / UNDONE
+PAUSED / RESUMED / OVERRIDDEN / UNDONE / HUMAN_DECISION / SETTLEMENT
 ```
+
+A `HUMAN_DECISION` event requires actor role, reason, previous outcome reference, and the decision.
+A `SETTLEMENT` event requires actor role, reason, the predecessor decision event, and settlement-evidence references.
+Pause and resume require an authorized actor role and reason.
+Override requires reason and a previous outcome reference.
+Undo requires reason and a target audit-event reference.
 
 Human-decision and settlement-evidence events extend this history only after the corresponding authorized human action. They do not change the original processing outcome.
 
@@ -166,6 +177,8 @@ Human-decision and settlement-evidence events extend this history only after the
 | Resume | An authorized event returns control state to `ACTIVE` without deleting prior alerts, questions, or missing approvals. |
 | Override | Permitted only for configured internal-policy rules; requires actor ID, actor role, reason, timestamp, and previous outcome ID. Mandatory-law rules are never overridable. |
 | Undo | Requires actor ID, reason, timestamp, and target audit-event ID; appends a compensating event and never deletes or edits the target. |
+| Human decision | Requires an authorized actor role, reason, previous outcome ID, and the decision; always appended after the agent outcome. |
+| Settlement | Requires an authorized actor role, reason, the predecessor human-decision event, and settlement-evidence references; never a side effect of agent processing. |
 
 ## 7. Persistence, retrieval, and API boundary
 

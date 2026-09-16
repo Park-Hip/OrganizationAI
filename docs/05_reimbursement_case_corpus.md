@@ -1,4 +1,4 @@
-# Reimbursement Case Corpus and Verify Suite v1.1
+# Reimbursement Case Corpus and Verify Suite v1.2
 
 ## Document control
 
@@ -15,6 +15,8 @@
 
 - [Policy Forge test suite](../policy-forge-baseline/test_cases.json)
 - [Policy Forge Verify suite](../policy-forge-baseline/verify_cases.json)
+- [Fixture-input schema](../policy-forge-baseline/reimbursement-fixture.schema.json)
+- [Expansion specification](../policy-forge-baseline/expansion_spec.md)
 
 **Purpose:** Define the synthetic policy cases that every reimbursement implementation must evaluate consistently. The JSON fixtures are canonical; this document is their human-readable manifest and acceptance contract.
 
@@ -24,34 +26,47 @@
 
 All corpus data is synthetic. It contains no real person, vendor, account, receipt, transaction, or payment information.
 
-The corpus tests the Policy Forge v1.1 reimbursement policy. It is not a record of real club decisions, a source of real configuration, or authorization to process a payment.
+The corpus tests the Policy Forge v1.2 reimbursement policy. It is not a record of real club decisions, a source of real configuration, or authorization to process a payment.
 
 Implementations must use the full synthetic suite for regression tests and the five-case Verify suite for a concise demonstration of deterministic processing and safe escalation.
 
-Each concise scenario fixture expands deterministically into a full reimbursement envelope through a data-driven expander; the expander never branches on fixture ID, title, or free text. See [ADR-007](ADRs/007_versioned-fixture-input-schema.md).
+Each concise scenario fixture expands deterministically into a full reimbursement envelope through a data-driven expander; the expander never branches on fixture ID, title, or free text. See [ADR-007](ADRs/007_versioned-fixture-input-schema.md) and the [expansion specification](../policy-forge-baseline/expansion_spec.md).
 
 ## 2. Full policy suite
 
-The canonical suite has 16 cases. Each case must return the expected processing result, escalation type where applicable, fixed `PENDING_HUMAN_APPROVAL` status, rule IDs, and calculation fields where specified.
+The canonical suite has 29 cases. Each case must return the expected processing result, escalation type where applicable, fixed `PENDING_HUMAN_APPROVAL` status, rule IDs, and calculation fields where specified.
 
 | Case | Group | Scenario focus | Expected result | Expected escalation | Primary rule(s) |
 | --- | --- | --- | --- | --- | --- |
-| `TC-R01` | Routine | Complete member-paid printing reimbursement within budget. | `ROUTINE_PROCESSED` | `null` | `RULE-ROUTINE-001` |
+| `TC-R01` | Routine | Complete member-paid printing reimbursement within budget. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
 | `TC-R02` | Routine | Advance settlement with surplus to return. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-001`, `RULE-ROUTINE-001` |
-| `TC-R03` | Routine / Verify | Amount immediately below routine threshold. | `ROUTINE_PROCESSED` | `null` | `RULE-ROUTINE-001` |
-| `TC-R04` | Routine / Verify | Amount exactly at routine threshold with required non-cash evidence. | `ROUTINE_PROCESSED` | `null` | `RULE-ROUTINE-001` |
+| `TC-R03` | Routine / Verify | Amount immediately below routine threshold. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
+| `TC-R04` | Routine / Verify | Amount exactly at routine threshold with required non-cash evidence. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
 | `TC-R05` | Routine | Advance settlement requiring additional payment after approval. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-001`, `RULE-ROUTINE-001` |
-| `TC-R06` | Routine / Verify | Multiple eligible lines within budget. | `ROUTINE_PROCESSED` | `null` | `RULE-ROUTINE-001` |
+| `TC-R06` | Routine / Verify | Multiple eligible lines within budget. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
+| `TC-R07` | Routine | Conditional category with the required prior approval. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
+| `TC-R08` | Routine | Submission exactly at the 10-business-day deadline boundary. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
+| `TC-R09` | Routine | Split purchase that aggregates under the routine threshold. | `ROUTINE_PROCESSED` | `null` | `RULE-AGG-001`, `RULE-CALC-002`, `RULE-ROUTINE-001` |
+| `TC-R10` | Routine | Tax regime applies and verified non-cash evidence is present. | `ROUTINE_PROCESSED` | `null` | `RULE-CALC-002`, `RULE-ROUTINE-001` |
 | `TC-F01` | Fact unknown / Verify | Unreadable invoice and low OCR confidence. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-FACT-001` |
 | `TC-F02` | Fact unknown | Missing payment proof for a member-paid case. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-DOC-001` |
 | `TC-F03` | Fact unknown | Declared total conflicts with evidence total. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-FACT-002` |
-| `TC-O01` | Out of policy | Alcohol category without exception approval. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-CAT-002` |
+| `TC-F04` | Fact unknown | A required fact cannot be derived from verified evidence. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-FACT-003` |
+| `TC-O01` | Out of policy | Alcohol category - single Club Chair addressee with Parent Advisor prerequisite. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-CAT-002` |
 | `TC-O02` | Out of policy | Personal expense has no approved event link. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-SCOPE-001` |
-| `TC-O03` | Out of policy | Tobacco is a prohibited category. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-CAT-001` |
+| `TC-O03` | Out of policy | Tobacco is an internal-policy prohibited category. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-CAT-001` |
+| `TC-O04` | Out of policy | Illegal goods are legally prohibited and never overridable. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-SCOPE-002` |
+| `TC-O05` | Out of policy | Category is not recognized in any configured list. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-CAT-001` |
 | `TC-A01` | Authority / Verify | Amount immediately above routine threshold. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-AUTH-001` |
 | `TC-A02` | Authority | Eligible amount exceeds remaining budget. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-BUDGET-001` |
 | `TC-A03` | Authority | Requester is also proposed approver. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-CONFLICT-001` |
+| `TC-A05` | Authority | Conditional category lacks the required prior approval. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-CAT-003` |
+| `TC-A06` | Authority | Submission is after the business-day deadline. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-DEADLINE-001` |
+| `TC-A07` | Authority | Split purchase aggregates above the routine threshold. | `ESCALATED` | `AUTHORITY_REQUIRED` | `RULE-AGG-001`, `RULE-AUTH-001` |
+| `TC-A08` | Fact unknown | Tax regime applies and verified non-cash evidence is absent. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-TAX-001` |
+| `TC-S01` | Control | Authorized pause halts processing before outcome. | paused (no result) | `null` | `RULE-SYS-001` |
 | `TC-X01` | Out of policy | Verified evidence was already paid with no credit/reversal. | `ESCALATED` | `OUT_OF_POLICY` | `RULE-DUP-002` |
+| `TC-X02` | Fact unknown | The duplicate check was not run. | `ESCALATED` | `FACT_UNKNOWN` | `RULE-DUP-001` |
 
 ### 2.1 Required calculation checks
 
@@ -59,12 +74,15 @@ The suite verifies calculations in addition to classification:
 
 | Case | Required assertion |
 | --- | --- |
-| `TC-R01` | Proposed eligible total is 850,000 VND. |
+| `TC-R01` | Proposed eligible total and reimbursement amount are 850,000 VND. |
 | `TC-R02` | Eligible total is 2,400,000 VND; amount to return is 600,000 VND; additional payment is 0 VND. |
 | `TC-R05` | Eligible total is 1,500,000 VND; amount to return is 0 VND; additional payment is 300,000 VND. |
 | `TC-R03` | 4,999,999 VND is within the configured routine-processing boundary. |
 | `TC-R04` | 5,000,000 VND is within the configured routine-processing boundary; this remains pending human approval. |
+| `TC-R08` | Exactly 10 business days after event end is not late under the configured deadline. |
+| `TC-R09` | Two related lines aggregate to 4,000,000 VND, which stays within the routine threshold. |
 | `TC-A01` | 5,000,001 VND requires authority review. |
+| `TC-A07` | Two related 3,000,000 VND lines aggregate to 6,000,000 VND, which exceeds the routine threshold. |
 
 The threshold values above are Policy Forge default-profile fixtures. Production configuration must use the approved `OrganizationProfile`; a fixture value is never a universal club rule.
 
@@ -100,7 +118,7 @@ A policy implementation satisfies this corpus only when all of the following hol
 | Determinism | Repeat runs using the same determinism key return the same result. |
 | Missed escalations | `required_escalation_but_routine_processed / total_required_escalations = 0`. |
 | Unnecessary escalations | `routine_cases_escalated / total_routine_cases = 0`. |
-| Regression coverage | All 16 canonical cases match expected result, escalation type, rule IDs, and specified calculation assertions. |
+| Regression coverage | All 29 canonical cases match expected result, escalation type, rule IDs, and specified calculation assertions. |
 
 ## 5. Harness requirements
 
@@ -118,7 +136,7 @@ The implementation test harness must:
 
 The former `TMP-DEV-001` fixture corpus was removed from the working documentation and remains retrievable from Git history. Its temporary categories, 1,000-VND boundary, and outcomes must not be mixed with this corpus.
 
-The new reimbursement implementation must add a separate Policy Forge v1.1 test path. It must run this corpus for the new versioned contract and policy path; legacy temporary behavior remains synthetic historical material until its endpoints are retired.
+The new reimbursement implementation must add a separate Policy Forge v1.2 test path. It must run this corpus for the new versioned contract and policy path; legacy temporary behavior remains synthetic historical material until its endpoints are retired.
 
 ## 7. Corpus maintenance
 

@@ -10,7 +10,7 @@
 
 **Purpose:** Define the smallest product slice that prepares an auditable reimbursement packet and routes uncertainty to an authorized human. It does not approve, reject, or transfer money.
 
-**Adopted decisions:** [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md) (synthetic pilot and public/private boundary), [ADR-008](ADRs/008_oidc-identity-adapter.md) (OIDC adapter with synthetic test identities), [ADR-009](ADRs/009_metadata-only-evidence-boundary.md) (metadata-only evidence), and [ADR-010](ADRs/010_alcohol-escalation-ownership.md) (alcohol handoff).
+**Adopted decisions:** [ADR-006](ADRs/006_synthetic-pilot-and-public-private-surfaces.md) (synthetic pilot and public/private boundary), [ADR-007](ADRs/007_versioned-fixture-input-schema.md) (versioned fixture-input schema and deterministic expansion), [ADR-008](ADRs/008_oidc-identity-adapter.md) (OIDC adapter with synthetic test identities), [ADR-009](ADRs/009_metadata-only-evidence-boundary.md) (metadata-only evidence), and [ADR-010](ADRs/010_alcohol-escalation-ownership.md) (alcohol handoff).
 
 ## 1. Product statement
 

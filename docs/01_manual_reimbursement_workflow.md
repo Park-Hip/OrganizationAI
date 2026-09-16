@@ -1,10 +1,10 @@
-# Manual Reimbursement Workflow v1.1
+# Manual Reimbursement Workflow v1.2
 
 ## Document control
 
 **Status:** Project-approved workflow baseline. Real-world activation remains conditional on the configuration and approval record below.
 
-**Policy source:** [Policy Forge reimbursement policy](../policy-forge-baseline/Policy_Hoan_Ung_CLB.md) and [machine-readable rules](../policy-forge-baseline/policy_rules.yaml) (`POL-REIMB-CLB` v1.1.0).
+**Policy source:** [Policy Forge reimbursement policy](../policy-forge-baseline/Policy_Hoan_Ung_CLB.md) and [machine-readable rules](../policy-forge-baseline/policy_rules.yaml) (`POL-REIMB-CLB` v1.2.0).
 
 **Purpose:** Describe the intended end-to-end club reimbursement workflow for people and systems. It separates automated processing from human approval and payment.
 

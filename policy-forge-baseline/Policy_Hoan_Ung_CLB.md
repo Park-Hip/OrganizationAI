@@ -9,7 +9,7 @@ Nguồn quy tắc cho agent hỗ trợ thủ quỹ — Task A
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Mã Policy | POL-REIMB-CLB |
-| Phiên bản | 1.1.0 |
+| Phiên bản | 1.2.0 |
 | Ngày rà soát nguồn | 12/09/2026 |
 | Trạng thái | Mẫu chờ đơn vị chủ quản phê duyệt |
 | Đơn vị chủ quản | CẦN XÁC NHẬN TRƯỚC KHI PILOT |
@@ -348,7 +348,7 @@ Mỗi kết quả xử lý phải nêu: processing_result; escalation_type; appr
 
 - ☐ Đơn vị chủ quản và chế độ kế toán/thuế đã được xác nhận bằng văn bản.
 - ☐ Ngưỡng, ngân sách, danh mục, vai trò và SLA đã được cấu hình/phê duyệt.
-- ☐ Đã kiểm thử 16 ca tổng hợp và 5 ca Verify; đã kiểm thử quyền truy cập và pause.
+- ☐ Đã kiểm thử 29 ca tổng hợp và 5 ca Verify; đã kiểm thử quyền truy cập và pause.
 - ☐ Đã có quy trình khiếu nại, sửa sai, hoàn tác, lưu trữ và ứng phó sự cố.
 - ☐ Đã đào tạo thủ quỹ/người duyệt rằng ROUTINE_PROCESSED không phải phê duyệt hoặc lệnh chuyển tiền.
 

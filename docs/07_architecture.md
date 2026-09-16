@@ -124,6 +124,7 @@ The following boundaries are frozen for the reimbursement v1 path and are record
 - The server owns actor identity, timestamps, identifiers, hashes, profile snapshots, and policy snapshots. A client cannot supply or choose any of these server-owned fields.
 - `ROUTINE_PROCESSED` means a review packet was prepared; it is never a human approval, payment instruction, or settlement confirmation.
 - There is no legacy conversion and no dual write. `TMP-DEV-001` records remain labelled synthetic history, and the v1 path is a separate versioned contract.
+- The v1.2.0 contract artifacts are [policy_rules.yaml](../policy-forge-baseline/policy_rules.yaml), [reimbursement.schema.json](../policy-forge-baseline/reimbursement.schema.json), [reimbursement-fixture.schema.json](../policy-forge-baseline/reimbursement-fixture.schema.json), [expansion_spec.md](../policy-forge-baseline/expansion_spec.md), and the two synthetic suites [test_cases.json](../policy-forge-baseline/test_cases.json) and [verify_cases.json](../policy-forge-baseline/verify_cases.json).
 
 ### Shared-file locks
 

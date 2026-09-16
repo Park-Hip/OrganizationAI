@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://organizationai.example/schemas/reimbursement-fixture.schema.json",
+  "$comment": "Versioned concise fixture-input schema (v1.2.0). A fixture input expands deterministically into a full reimbursement envelope. The expander is data-driven and never branches on fixture id, title, or free-text prose (see ADR-007 and expansion_spec.md).",
+  "title": "OrganizationAI Reimbursement Concise Fixture Input (v1.2.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["flow_type", "expense", "duplicate_check"],
+  "properties": {
+    "flow_type": {"enum": ["ADVANCE_SETTLEMENT", "MEMBER_PAID"]},
+    "requester_id": {"type": "string", "minLength": 1},
+    "proposed_approver_id": {"type": "string", "minLength": 1},
+    "task_or_event": {"type": "string", "minLength": 1},
+    "purpose": {"type": "string", "minLength": 1},
+    "event_end_date": {"type": "string", "format": "date"},
+    "submitted_at": {"type": "string", "format": "date-time"},
+    "budget": {"$ref": "#/$defs/ConciseBudget"},
+    "advance_amount_vnd": {"$ref": "#/$defs/Money"},
+    "expense": {"$ref": "#/$defs/ConciseExpense"},
+    "evidence": {"$ref": "#/$defs/ConciseEvidence"},
+    "duplicate_check": {"enum": ["CLEAR", "SUSPECTED", "CONFIRMED_PAID", "NOT_RUN"]},
+    "prior_payment_reference": {"type": "string"},
+    "days_late": {"type": "integer", "minimum": 0},
+    "conflict": {"type": "boolean"},
+    "paused": {"type": "boolean"},
+    "profile_overrides": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tax_regime_applies": {"type": "boolean"},
+        "submission_deadline_business_days": {"type": "integer", "minimum": 0},
+        "routine_processing_max_vnd": {"$ref": "#/$defs/Money"},
+        "authority_threshold_operator": {"enum": ["greater_than", "greater_than_or_equal"]},
+        "non_cash_evidence_threshold_vnd": {"$ref": "#/$defs/Money"}
+      },
+      "minProperties": 1,
+      "description": "Allowed, server-configurable profile overrides for a synthetic scenario. Real profile values must never be invented here."
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"flow_type": {"const": "ADVANCE_SETTLEMENT"}}, "required": ["flow_type"]},
+      "then": {"required": ["advance_amount_vnd"]}
+    },
+    {
+      "if": {"properties": {"flow_type": {"const": "MEMBER_PAID"}}, "required": ["flow_type"]},
+      "then": {"not": {"required": ["advance_amount_vnd"]}}
+    }
+  ],
+  "$defs": {
+    "Money": {"type": "integer", "minimum": 0},
+    "ConciseBudget": {
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [
+        {"required": ["approved_vnd", "remaining_vnd"]},
+        {"required": ["approved_vnd"]},
+        {"required": ["remaining_vnd"]}
+      ],
+      "properties": {
+        "approved_vnd": {"$ref": "#/$defs/Money"},
+        "remaining_vnd": {"$ref": "#/$defs/Money"}
+      }
+    },
+    "ConciseExpense": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "total_vnd": {"$ref": "#/$defs/Money", "description": "Declared total for a single-line expense."},
+        "category": {"type": "string"},
+        "payment_method": {"enum": ["CASH", "BANK_TRANSFER", "CARD", "E_WALLET", "OTHER"]},
+        "vendor": {"type": "string"},
+        "transaction_date": {"type": "string", "format": "date"},
+        "purpose_code": {"type": "string"},
+        "items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ConciseLine"}}
+      },
+      "anyOf": [
+        {"required": ["total_vnd", "category"]},
+        {"required": ["items"]}
+      ]
+    },
+    "ConciseLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vendor", "transaction_date", "purpose_code", "category", "amount_vnd"],
+      "properties": {
+        "vendor": {"type": "string", "minLength": 1},
+        "transaction_date": {"type": "string", "format": "date"},
+        "purpose_code": {"type": "string"},
+        "category": {"type": "string"},
+        "amount_vnd": {"$ref": "#/$defs/Money"},
+        "payment_method": {"enum": ["CASH", "BANK_TRANSFER", "CARD", "E_WALLET", "OTHER"]}
+      }
+    },
+    "ConciseEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "readable": {"type": "boolean"},
+        "ocr_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "verified": {"type": "boolean"},
+        "payment_proof": {"type": "boolean"},
+        "non_cash_verified": {"type": "boolean"},
+        "prior_approval_present": {"type": "boolean"},
+        "event_link": {"type": "boolean"},
+        "advance_reference": {"type": "string"},
+        "declared_total_vnd": {"$ref": "#/$defs/Money"},
+        "evidence_total_vnd": {"$ref": "#/$defs/Money"},
+        "missing_facts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -109,10 +109,7 @@ def _person(person_id: str, role: str) -> dict[str, str]:
 def _payment_is_non_cash(expense: dict[str, Any]) -> bool:
     if "items" in expense:
         return bool(
-            all(
-                item.get("payment_method", "BANK_TRANSFER") != "CASH"
-                for item in expense["items"]
-            )
+            all(item.get("payment_method", "BANK_TRANSFER") != "CASH" for item in expense["items"])
         )
     return bool(expense.get("payment_method", "BANK_TRANSFER") != "CASH")
 

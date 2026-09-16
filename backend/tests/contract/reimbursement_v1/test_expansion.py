@@ -223,9 +223,7 @@ def test_materialized_outcome_follows_initial_audit_events() -> None:
 
 def test_schema_rejects_advance_fields_for_member_paid_case() -> None:
     member_paid = next(
-        case["input"]
-        for case in TEST_CASES["cases"]
-        if case["input"]["flow_type"] == "MEMBER_PAID"
+        case["input"] for case in TEST_CASES["cases"] if case["input"]["flow_type"] == "MEMBER_PAID"
     )
     case_validator = _component_validator("ReimbursementCase")
     base = expand(member_paid, PROFILE, POLICY_VERSION)["case"]

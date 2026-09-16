@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from typing import Any
 
 import jsonschema
 from _artifacts import FIXTURE_SCHEMA, TEST_CASES, VERIFY_CASES
@@ -82,7 +83,7 @@ def test_itemized_expense_cannot_carry_single_line_scalars() -> None:
         "payment_method": "CASH",
     }
     for key, value in scalars.items():
-        hybrid = deepcopy(base)
+        hybrid: dict[str, Any] = deepcopy(base)
         hybrid["expense"][key] = value
         errors = list(_validator().iter_errors(hybrid))
         assert errors, key

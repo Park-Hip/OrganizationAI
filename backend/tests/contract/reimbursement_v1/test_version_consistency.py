@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from _artifacts import (
     FIXTURE_SCHEMA,
     POLICY_VERSION,
@@ -10,6 +11,8 @@ from _artifacts import (
     TEST_CASES,
     VERIFY_CASES,
 )
+
+pytestmark = pytest.mark.v1_contract
 
 CONTRACT_VERSION = "1.2.0"
 

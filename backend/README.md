@@ -115,8 +115,8 @@ The non-database baseline does not collect integration tests and is green when i
 `uv run pytest -m integration` skips with a message naming `TEST_DATABASE_URL` whenever the isolated test database is not configured.
 They run, rather than skip, only after `test-db` is started and `TEST_DATABASE_URL` is exported.
 A skip is reported clearly and is never presented as a pass.
-The `v1_contract` command has no selected tests until SETUP-02 adds `tests/contract/reimbursement_v1/`.
-CI intentionally fails its v1 source-contract job while that directory is absent, so the setup sequencing cannot be mistaken for successful validation.
+The `v1_contract` command runs the reimbursement v1 source-contract and module-seam tests in `tests/contract/reimbursement_v1/`.
+CI runs the same group by path, so missing v1 source-contract coverage fails explicitly.
 
 ### Failure triage
 

@@ -6,7 +6,10 @@ from copy import deepcopy
 from typing import Any
 
 import jsonschema
+import pytest
 from _artifacts import FIXTURE_SCHEMA, TEST_CASES, VERIFY_CASES
+
+pytestmark = pytest.mark.v1_contract
 
 
 def _validator() -> jsonschema.Draft202012Validator:

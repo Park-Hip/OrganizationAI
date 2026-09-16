@@ -4,13 +4,14 @@
 
 **Depends on:** [ADR-007](../docs/ADRs/007_versioned-fixture-input-schema.md), [reimbursement.schema.json](reimbursement.schema.json), and [reimbursement-fixture.schema.json](reimbursement-fixture.schema.json).
 
-**Purpose:** Define the single deterministic mapping from a concise synthetic fixture input to a full reimbursement envelope. Every service (policy engine, harness, Verify path, and persistence integration) must share this mapping so a concise fixture and its full envelope are interchangeable.
+**Purpose:** Define the single deterministic mapping from a concise synthetic fixture input to its pre-evaluation reimbursement input snapshot. Every service (policy engine, harness, Verify path, and persistence integration) must share this mapping so a concise fixture and its input snapshot are interchangeable.
 
-This document does not implement policy evaluation. It only turns a concise input into the complete input side of the envelope: `policy_version`, `organization_profile`, `case`, `control_state`, and the initial `audit_events`.
+This document does not implement policy evaluation. The expander emits only the input snapshot: `policy_version`, `organization_profile`, `case`, `control_state`, and the initial `audit_events`.
+Only the policy evaluator produces the complete evaluated envelope with `processing_outcome` and any `escalation`.
 
 ## 1. Invariants
 
-1. Expansion is deterministic. The same concise input always produces the same full envelope.
+1. Expansion is deterministic. The same concise input always produces the same input snapshot.
 2. Expansion never depends on the fixture id, title, group, note, or any free-text prose. Two fixtures with identical structural input and different ids/titles expand to byte-identical envelopes.
 3. The expander optionally applies only the data-driven field mappings below. It never hard-codes a category price, a real profile value, a real person, or an organization decision.
 4. Structural inputs that fail [reimbursement-fixture.schema.json](reimbursement-fixture.schema.json) are rejected before expansion. The expander never silently reinterprets malformed input.
@@ -119,7 +120,8 @@ Prose, titles, notes, and the fixture id are excluded from the digest.
 The contract-validation suite must prove:
 
 1. Every concise fixture validates against [reimbursement-fixture.schema.json](reimbursement-fixture.schema.json).
-2. Every expansion validates against [reimbursement.schema.json](reimbursement.schema.json), including its cross-field conditions.
+2. Every input snapshot validates its `organization_profile`, `case`, `control_state`, `audit_events`, and `policy_version` against the corresponding [reimbursement.schema.json](reimbursement.schema.json) components.
+The evaluator-produced complete envelope validates against the full schema, including its cross-field conditions.
 3. Expansion is deterministic across repeated runs.
 4. Expansion is independent of fixture id, title, group, note, and prose.
 5. Malformed structural inputs fail before evaluation.

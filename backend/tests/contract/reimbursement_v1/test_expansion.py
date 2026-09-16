@@ -17,6 +17,50 @@ def _envelope_validator() -> jsonschema.Draft202012Validator:
     )
 
 
+def _component_validator(definition: str) -> jsonschema.Draft202012Validator:
+    return jsonschema.Draft202012Validator(
+        {"$ref": f"#/$defs/{definition}", "$defs": REIMBURSEMENT_SCHEMA["$defs"]},
+        format_checker=jsonschema.FormatChecker(),
+    )
+
+
+def _policy_version_validator() -> jsonschema.Draft202012Validator:
+    return jsonschema.Draft202012Validator(
+        REIMBURSEMENT_SCHEMA["properties"]["policy_version"],
+        format_checker=jsonschema.FormatChecker(),
+    )
+
+
+def _control_state_validator() -> jsonschema.Draft202012Validator:
+    return jsonschema.Draft202012Validator(
+        REIMBURSEMENT_SCHEMA["properties"]["control_state"],
+        format_checker=jsonschema.FormatChecker(),
+    )
+
+
+def test_every_fixture_expands_to_a_valid_input_snapshot() -> None:
+    profile_validator = _component_validator("OrganizationProfile")
+    case_validator = _component_validator("ReimbursementCase")
+    audit_validator = _component_validator("AuditEvent")
+    policy_version_validator = _policy_version_validator()
+    control_state_validator = _control_state_validator()
+
+    for fixture in TEST_CASES["cases"]:
+        snapshot = expand(fixture["input"], PROFILE, POLICY_VERSION)
+        errors = [
+            *profile_validator.iter_errors(snapshot["organization_profile"]),
+            *case_validator.iter_errors(snapshot["case"]),
+            *policy_version_validator.iter_errors(snapshot["policy_version"]),
+            *control_state_validator.iter_errors(snapshot["control_state"]),
+            *(
+                error
+                for event in snapshot["audit_events"]
+                for error in audit_validator.iter_errors(event)
+            ),
+        ]
+        assert not errors, (fixture["id"], [error.message for error in errors])
+
+
 def test_every_fixture_expands_to_a_valid_full_envelope() -> None:
     for case in TEST_CASES["cases"]:
         envelope = materialize_envelope(case["input"], PROFILE, POLICY_VERSION, case["expected"])

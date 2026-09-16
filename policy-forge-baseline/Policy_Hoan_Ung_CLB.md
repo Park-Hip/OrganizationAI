@@ -112,7 +112,7 @@ Tương thích mẫu: trường thông tin trong phụ lục được thiết k�
 | Tổng > 5.000.000 | Chủ nhiệm | ESCALATED / AUTHORITY_REQUIRED. |
 | Vượt ngân sách / xung đột | Người có thẩm quyền độc lập | ESCALATED / AUTHORITY_REQUIRED. |
 | Dữ kiện chưa rõ | Người đề nghị/nhà cung cấp/thủ quỹ | ESCALATED / FACT_UNKNOWN; trả lời có bằng chứng. |
-| Ngoài Policy | Chủ nhiệm +/hoặc cố vấn theo danh mục | ESCALATED / OUT_OF_POLICY; người có thẩm quyền xem xét ngoại lệ nếu được phép. |
+| Ngoài Policy | CLUB_CHAIR | ESCALATED / OUT_OF_POLICY; riêng rượu/bia chỉ chuyển CLUB_CHAIR sau tham vấn PARENT_ADVISOR được ghi audit, là điều kiện tiên quyết chứ không phải quyết định thứ hai của agent. |
 | Trùng đã thanh toán, xác minh chắc chắn | Người có thẩm quyền | ESCALATED / OUT_OF_POLICY; agent không tự từ chối. |
 
 ## 4. Thành phần hồ sơ tiêu chuẩn

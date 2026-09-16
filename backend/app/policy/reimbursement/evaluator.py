@@ -32,6 +32,8 @@ def evaluate(
         raise ValueError("profile and policy snapshots must use the same policy version")
     if case.paused and control_state is not ControlState.PAUSED:
         raise ValueError("a paused case requires a PAUSED control state")
+    if control_state is ControlState.PAUSED:
+        return ProcessingPacket(control_state=ControlState.PAUSED)
     packet = _evaluate_policy(case, profile_snapshot, policy_snapshot, control_state)
     _validate_packet_for_case(case, control_state, packet)
     return packet

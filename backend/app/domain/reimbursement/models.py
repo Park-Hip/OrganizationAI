@@ -10,6 +10,7 @@ import re
 from datetime import date, datetime
 
 from pydantic import (
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -259,7 +260,7 @@ class ReimbursementCase(FrozenDomainModel):
     case_id: str
     flow_type: FlowType
     requester: PersonRef
-    submitted_at: datetime
+    submitted_at: AwareDatetime
     task_or_event: str
     event_end_date: date
     purpose: str
@@ -352,7 +353,7 @@ class ProcessingOutcome(FrozenDomainModel):
     triggered_rule_ids: tuple[str, ...] = Field(min_length=1)
     evidence_used: tuple[str, ...] = ()
     explanation_vi: str = Field(min_length=20)
-    created_at: datetime
+    created_at: AwareDatetime
 
     @field_validator("outcome_id")
     @classmethod
@@ -415,7 +416,7 @@ class AuditEvent(FrozenDomainModel):
     """Append-only audit value ready for a persistence adapter to record."""
 
     event_id: str
-    timestamp: datetime
+    timestamp: AwareDatetime
     actor_id: str
     actor_type: AuditActorType
     policy_version: str

@@ -13,6 +13,9 @@ import pytest
 import app.policy.reimbursement.evaluator as evaluator_module
 from app.domain.reimbursement import (
     ApprovalStatus,
+    AuditActorType,
+    AuditEvent,
+    AuditEventType,
     AuthorityThresholdOperator,
     ControlState,
     EscalationType,
@@ -344,6 +347,31 @@ def test_v1_structural_scalars_reject_coercible_values() -> None:
         ProcessingOutcome.model_validate(outcome_payload)
 
 
+def test_v1_timestamps_require_timezones() -> None:
+    with pytest.raises(ValueError):
+        ReimbursementCase.model_validate(
+            _member_paid_case().model_dump() | {"submitted_at": datetime(2026, 9, 16)}
+        )
+
+    with pytest.raises(ValueError):
+        ProcessingOutcome.model_validate(
+            _outcome().model_dump() | {"created_at": datetime(2026, 9, 16)}
+        )
+
+    with pytest.raises(ValueError):
+        AuditEvent(
+            event_id="AUD-001",
+            timestamp=datetime(2026, 9, 16),
+            actor_id="AGENT-001",
+            actor_type=AuditActorType.AGENT,
+            policy_version="1.2.0",
+            event_type=AuditEventType.RECEIVED,
+            input_hash="sha256-synthetic",
+            triggered_rule_ids=(),
+            explanation="Synthetic receipt of a reimbursement case.",
+        )
+
+
 def test_evaluator_enforces_case_control_and_flow_output_invariants(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -377,6 +405,20 @@ def test_evaluator_enforces_case_control_and_flow_output_invariants(
 
     with pytest.raises(ValueError, match="paused case requires"):
         evaluate(_member_paid_case(paused=True), _profile(), _policy_snapshot(), ControlState.ACTIVE)
+
+    def policy_core_must_not_run(*_: object) -> ProcessingPacket:
+        raise AssertionError("a paused case must not reach policy evaluation")
+
+    monkeypatch.setattr(evaluator_module, "_evaluate_policy", policy_core_must_not_run)
+    paused_packet = evaluate(
+        _member_paid_case(paused=True),
+        _profile(),
+        _policy_snapshot(),
+        ControlState.PAUSED,
+    )
+    assert paused_packet.control_state is ControlState.PAUSED
+    assert paused_packet.outcome is None
+    assert paused_packet.escalation is None
 
     monkeypatch.setattr(
         evaluator_module,

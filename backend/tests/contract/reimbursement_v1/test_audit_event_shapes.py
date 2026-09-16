@@ -69,6 +69,33 @@ def test_settlement_requires_role_reason_predecessor_and_evidence() -> None:
         assert _errors(missing)
 
 
+def test_decision_and_settlement_events_require_human_actors() -> None:
+    for event_type, fields in (
+        (
+            "HUMAN_DECISION",
+            {
+                "actor_role": "CLUB_CHAIR",
+                "reason": "Authorized review decision.",
+                "previous_outcome_id": "OUT-1",
+                "decision": "APPROVE",
+            },
+        ),
+        (
+            "SETTLEMENT",
+            {
+                "actor_role": "TREASURER",
+                "reason": "Settled after recorded human approval.",
+                "predecessor_event_id": "EVT-DEC-1",
+                "evidence_ids": ["E-1"],
+            },
+        ),
+    ):
+        event = _event(event_type)
+        event.update(fields)
+        event["actor_type"] = "AGENT"
+        assert _errors(event), event_type
+
+
 def test_override_requires_previous_outcome_and_reason() -> None:
     event = _event("OVERRIDDEN")
     event.update(

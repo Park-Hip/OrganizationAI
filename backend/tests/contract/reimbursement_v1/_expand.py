@@ -17,8 +17,14 @@ import json
 from copy import deepcopy
 from typing import Any
 
+import jsonschema
+from _artifacts import FIXTURE_SCHEMA
+
 PROSE_FIELDS = {"purpose", "task_or_event"}
 FACT_FLAG_MAP = {"vendor_identity": "VENDOR_IDENTITY_UNVERIFIED"}
+FIXTURE_VALIDATOR = jsonschema.Draft202012Validator(
+    FIXTURE_SCHEMA, format_checker=jsonschema.FormatChecker()
+)
 
 _DEFAULT_EVENT_END_DATE = "2026-08-31"
 _DEFAULT_SUBMITTED_AT = "2026-09-10T09:00:00Z"
@@ -36,12 +42,20 @@ def structural_input(concise: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in concise.items() if key not in PROSE_FIELDS}
 
 
-def structural_digest(concise: dict[str, Any]) -> str:
-    return hashlib.sha256(_canonical(structural_input(concise)).encode("utf-8")).hexdigest()
+def snapshot_digest(
+    concise: dict[str, Any], profile: dict[str, Any], policy_version: str
+) -> str:
+    snapshot = {
+        "input": structural_input(concise),
+        "policy_version": policy_version,
+        "profile_id": profile["profile_id"],
+        "profile_version": profile["profile_version"],
+    }
+    return hashlib.sha256(_canonical(snapshot).encode("utf-8")).hexdigest()
 
 
-def _gen_id(prefix: str, concise: dict[str, Any]) -> str:
-    return f"{prefix}-{structural_digest(concise)[:12]}"
+def _gen_id(prefix: str, digest: str) -> str:
+    return f"{prefix}-{digest[:12]}"
 
 
 def _person(person_id: str, role: str) -> dict[str, str]:
@@ -57,7 +71,10 @@ def _payment_is_non_cash(expense: dict[str, Any]) -> bool:
 
 
 def _build_lines(
-    concise: dict[str, Any], invoice_evidence_id: str, suspicion_flags: list[str]
+    concise: dict[str, Any],
+    invoice_evidence_id: str,
+    suspicion_flags: list[str],
+    digest: str,
 ) -> list[dict[str, Any]]:
     expense = concise["expense"]
     lines: list[dict[str, Any]] = []
@@ -65,7 +82,7 @@ def _build_lines(
         for index, item in enumerate(expense["items"], start=1):
             lines.append(
                 {
-                    "line_id": f"LN-{structural_digest(concise)[:8]}-{index}",
+                    "line_id": f"LN-{digest[:8]}-{index}",
                     "vendor": item["vendor"],
                     "transaction_date": item["transaction_date"],
                     "purpose_code": item["purpose_code"],
@@ -81,7 +98,7 @@ def _build_lines(
     else:
         lines.append(
             {
-                "line_id": f"LN-{structural_digest(concise)[:8]}-1",
+                "line_id": f"LN-{digest[:8]}-1",
                 "vendor": expense.get("vendor", "V-SYN-001"),
                 "transaction_date": expense.get("transaction_date", _DEFAULT_TRANSACTION_DATE),
                 "purpose_code": expense.get("purpose_code", "PURP-SYN"),
@@ -119,9 +136,9 @@ def _build_evidence(
     declared_total: int,
     advance_amount: int | None,
     non_cash_verified: bool,
+    digest: str,
 ) -> list[dict[str, Any]]:
     evidence = concise.get("evidence") or {}
-    digest = structural_digest(concise)
     readable = bool(evidence.get("readable", True))
     verified = bool(evidence.get("verified", True))
     ocr_confidence = evidence.get("ocr_confidence", None)
@@ -200,9 +217,8 @@ def _suspicion_flags(concise: dict[str, Any]) -> list[str]:
 
 
 def _audit_events(
-    concise: dict[str, Any], policy_version: str, paused: bool
+    digest: str, policy_version: str, paused: bool
 ) -> list[dict[str, Any]]:
-    digest = structural_digest(concise)
     input_hash = f"sha256-{digest}"
     events: list[dict[str, Any]] = [
         {
@@ -249,6 +265,7 @@ def _audit_events(
 
 def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str) -> dict[str, Any]:
     """Expand a concise fixture input into a full input envelope."""
+    FIXTURE_VALIDATOR.validate(concise)
     concise = deepcopy(concise)
     flow_type = concise["flow_type"]
     paused = bool(concise.get("paused", False))
@@ -260,9 +277,9 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         proposed_id = requester_id
 
     profile = deepcopy(profile)
-    for key, value in (concise.get("profile_overrides") or {}).items():
-        if key in profile:
-            profile[key] = value
+    profile.update(concise.get("profile_overrides") or {})
+
+    digest = snapshot_digest(concise, profile, policy_version)
 
     expense = concise["expense"]
     evidence = concise.get("evidence") or {}
@@ -272,17 +289,16 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         int(concise["advance_amount_vnd"]) if flow_type == "ADVANCE_SETTLEMENT" else None
     )
 
-    digest = structural_digest(concise)
     invoice_id = f"E-1-{digest[:8]}"
     flags = _suspicion_flags(concise)
-    lines = _build_lines(concise, invoice_id, flags)
+    lines = _build_lines(concise, invoice_id, flags, digest)
     if "non_cash_verified" in evidence:
         non_cash_verified = bool(evidence["non_cash_verified"])
     else:
         non_cash_verified = _payment_is_non_cash(expense)
 
     evidence_records = _build_evidence(
-        concise, declared_total, advance_amount, non_cash_verified
+        concise, declared_total, advance_amount, non_cash_verified, digest
     )
 
     prior_approval_ids = []
@@ -290,7 +306,7 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         prior_approval_ids = [f"APR-{digest[:8]}"]
 
     case: dict[str, Any] = {
-        "case_id": _gen_id("CASE", concise),
+        "case_id": _gen_id("CASE", digest),
         "flow_type": flow_type,
         "requester": _person(requester_id, profile["roles"]["requester"]),
         "submitted_at": concise.get("submitted_at", _DEFAULT_SUBMITTED_AT),
@@ -316,6 +332,9 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         "paused": paused,
     }
 
+    if "prior_payment_reference" in concise:
+        case["prior_payment_reference"] = concise["prior_payment_reference"]
+
     if flow_type == "ADVANCE_SETTLEMENT":
         case["advance_reference"] = evidence.get("advance_reference", f"ADV-{digest[:8]}")
         case["advance_amount_vnd"] = advance_amount
@@ -325,7 +344,7 @@ def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str
         "organization_profile": profile,
         "case": case,
         "control_state": "PAUSED" if paused else "ACTIVE",
-        "audit_events": _audit_events(concise, policy_version, paused),
+        "audit_events": _audit_events(digest, policy_version, paused),
     }
     return envelope
 
@@ -344,16 +363,17 @@ def materialize_envelope(
     deterministically expanded input.
     """
     envelope = expand(concise, profile, policy_version)
+    digest = snapshot_digest(concise, envelope["organization_profile"], policy_version)
     if expected.get("control_state") == "PAUSED":
         return envelope
 
     outcome: dict[str, Any] = {
-        "outcome_id": _gen_id("OUT", concise),
+        "outcome_id": _gen_id("OUT", digest),
         "processing_result": expected["processing_result"],
         "escalation_type": expected.get("escalation_type"),
         "approval_status": expected["approval_status"],
         "triggered_rule_ids": list(expected["triggered_rule_ids"]),
-        "evidence_used": [f"E-1-{structural_digest(concise)[:8]}"],
+        "evidence_used": [f"E-1-{digest[:8]}"],
         "explanation_vi": "Kết quả xử lý tổng hợp; không phải phê duyệt hay lệnh thanh toán.",
         "created_at": "2026-09-10T09:05:00Z",
     }
@@ -371,9 +391,9 @@ def materialize_envelope(
         escalation: dict[str, Any] = {
             "type": expected["escalation_type"],
             "addressee_role": expected["addressee_role"],
-            "related_evidence": [f"E-1-{structural_digest(concise)[:8]}"],
+            "related_evidence": [f"E-1-{digest[:8]}"],
             "known_facts": [
-                f"case {_gen_id('CASE', concise)}",
+                f"case {_gen_id('CASE', digest)}",
                 f"amount {expected.get('eligible_total_vnd', 'n/a')}",
             ],
             "specific_question": "Cần câu trả lời có căn cứ kèm bằng chứng đính kèm.",

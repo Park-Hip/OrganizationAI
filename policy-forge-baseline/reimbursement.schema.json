@@ -179,6 +179,7 @@
         "approved_budget_vnd": {"$ref": "#/$defs/Money"},
         "remaining_budget_vnd": {"$ref": "#/$defs/Money"},
         "prior_approval_ids": {"type": "array", "items": {"type": "string"}},
+        "prior_payment_reference": {"type": "string"},
         "advance_reference": {"type": "string"},
         "advance_amount_vnd": {"$ref": "#/$defs/Money"},
         "expense_items": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ExpenseItem"}},
@@ -291,9 +292,9 @@
         {"if": {"properties": {"event_type": {"const": "UNDONE"}}, "required": ["event_type"]},
          "then": {"required": ["actor_role", "reason", "target_audit_event_id"]}},
         {"if": {"properties": {"event_type": {"const": "HUMAN_DECISION"}}, "required": ["event_type"]},
-         "then": {"required": ["actor_role", "reason", "previous_outcome_id", "decision"]}},
+         "then": {"properties": {"actor_type": {"const": "HUMAN"}}, "required": ["actor_role", "reason", "previous_outcome_id", "decision"]}},
         {"if": {"properties": {"event_type": {"const": "SETTLEMENT"}}, "required": ["event_type"]},
-         "then": {"required": ["actor_role", "reason", "predecessor_event_id", "evidence_ids"]}}
+         "then": {"properties": {"actor_type": {"const": "HUMAN"}}, "required": ["actor_role", "reason", "predecessor_event_id", "evidence_ids"]}}
       ]
     }
   }

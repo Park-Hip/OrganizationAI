@@ -2,7 +2,7 @@
   "verify_suite_id": "TASK-A-QUICK-VERIFY-1.2.0",
   "policy_version": "1.2.0",
   "source_suite": "test_cases.json",
-  "determinism_key": ["normalized_input_hash", "policy_version", "organization_profile.profile_id"],
+  "determinism_key": ["normalized_structural_input", "policy_version", "organization_profile.profile_id", "organization_profile.profile_version"],
   "cases": [
     {"case_id": "TC-R03", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},
     {"case_id": "TC-R04", "expected_processing_result": "ROUTINE_PROCESSED", "expected_escalation_type": null, "expected_approval_status": "PENDING_HUMAN_APPROVAL"},

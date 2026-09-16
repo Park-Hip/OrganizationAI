@@ -25,7 +25,7 @@ This document does not implement policy evaluation. It only turns a concise inpu
 | `organization_profile` | The default `organization_profile` from `policy_rules.yaml`, with any allowed `profile_overrides` applied. Profile id and version are server-owned; overrides may only change the explicit allow-listed configuration keys. |
 | `control_state` | `PAUSED` when `input.paused == true`; otherwise `ACTIVE`. |
 | `evidence_amount_vnd` | Only from the concise evidence amount fields; the expander never invents an amount. |
-| IDs and hashes | Derived from a deterministic digest of the canonicalized structural input only. The digest never includes the fixture id, title, group, note, or free-text prose. |
+| IDs and hashes | Derived from the full deterministic snapshot: canonicalized structural input, policy version, profile ID, and profile version. The digest never includes fixture metadata or free-text prose. |
 | Timestamps | Fixed synthetic constants when the concise input does not override them. |
 
 ## 3. Defaults
@@ -109,7 +109,7 @@ When `PAUSED`, a `PAUSED` event is appended and no outcome or escalation is prod
 The determinism key is:
 
 ```text
-sha256(canonical structural input) + policy_version + organization_profile.profile_id
+sha256(canonical structural input + policy_version + organization_profile.profile_id + organization_profile.profile_version)
 ```
 
 Prose, titles, notes, and the fixture id are excluded from the digest.

@@ -55,3 +55,13 @@ def test_expense_cannot_combine_single_line_and_itemized_forms() -> None:
         "duplicate_check": "CLEAR",
     }
     assert list(_validator().iter_errors(ambiguous))
+
+
+def test_unknown_missing_fact_is_rejected() -> None:
+    unknown_fact = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {"total_vnd": 850000, "category": "printing"},
+        "evidence": {"missing_facts": ["invoice_number"]},
+        "duplicate_check": "CLEAR",
+    }
+    assert list(_validator().iter_errors(unknown_fact))

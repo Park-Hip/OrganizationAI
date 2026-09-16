@@ -27,11 +27,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "tax_regime_applies": {"type": "boolean"},
-        "submission_deadline_business_days": {"type": "integer", "minimum": 0},
-        "routine_processing_max_vnd": {"$ref": "#/$defs/Money"},
-        "authority_threshold_operator": {"enum": ["greater_than", "greater_than_or_equal"]},
-        "non_cash_evidence_threshold_vnd": {"$ref": "#/$defs/Money"}
+        "tax_regime_applies": {"type": "boolean"}
       },
       "minProperties": 1,
       "description": "Allowed, server-configurable profile overrides for a synthetic scenario. Real profile values must never be invented here."
@@ -113,7 +109,7 @@
         "advance_reference": {"type": "string"},
         "declared_total_vnd": {"$ref": "#/$defs/Money"},
         "evidence_total_vnd": {"$ref": "#/$defs/Money"},
-        "missing_facts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}}
+        "missing_facts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["vendor_identity"]}}
       }
     }
   }

@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 
 import jsonschema
+import pytest
 from _artifacts import POLICY_VERSION, PROFILE, REIMBURSEMENT_SCHEMA, TEST_CASES
 from _expand import expand, materialize_envelope
 
@@ -28,6 +29,38 @@ def test_expansion_is_deterministic() -> None:
     assert json.dumps(expand(first, PROFILE, POLICY_VERSION), sort_keys=True) == json.dumps(
         expand(first, PROFILE, POLICY_VERSION), sort_keys=True
     )
+
+
+def test_expansion_binds_generated_identifiers_to_the_full_snapshot() -> None:
+    concise = TEST_CASES["cases"][0]["input"]
+    current = expand(concise, PROFILE, POLICY_VERSION)
+    different_policy = expand(concise, PROFILE, "1.3.0")
+
+    assert current["case"]["case_id"] != different_policy["case"]["case_id"]
+    assert current["audit_events"][0]["input_hash"] != different_policy["audit_events"][0]["input_hash"]
+
+
+def test_expansion_rejects_hybrid_expense_input() -> None:
+    hybrid = {
+        "flow_type": "MEMBER_PAID",
+        "expense": {
+            "total_vnd": 850000,
+            "category": "printing",
+            "items": [
+                {
+                    "vendor": "V-SYN-001",
+                    "transaction_date": "2026-08-01",
+                    "purpose_code": "print",
+                    "category": "printing",
+                    "amount_vnd": 6000000,
+                }
+            ],
+        },
+        "duplicate_check": "CLEAR",
+    }
+
+    with pytest.raises(jsonschema.ValidationError):
+        expand(hybrid, PROFILE, POLICY_VERSION)
 
 
 def test_expander_receives_no_fixture_metadata() -> None:
@@ -115,3 +148,15 @@ def test_schema_enforces_routine_calculation_fields_by_flow() -> None:
 
     assert list(_envelope_validator().iter_errors(member_envelope))
     assert list(_envelope_validator().iter_errors(advance_envelope))
+
+
+def test_expansion_preserves_confirmed_duplicate_reference() -> None:
+    concise = next(
+        case["input"]
+        for case in TEST_CASES["cases"]
+        if case["input"]["duplicate_check"] == "CONFIRMED_PAID"
+    )
+
+    envelope = expand(concise, PROFILE, POLICY_VERSION)
+
+    assert envelope["case"]["prior_payment_reference"] == concise["prior_payment_reference"]

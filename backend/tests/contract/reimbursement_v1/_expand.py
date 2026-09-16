@@ -88,9 +88,7 @@ def normalize_concise_input(concise: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def snapshot_digest(
-    concise: dict[str, Any], profile: dict[str, Any], policy_version: str
-) -> str:
+def snapshot_digest(concise: dict[str, Any], profile: dict[str, Any], policy_version: str) -> str:
     snapshot = {
         "input": structural_input(normalize_concise_input(concise)),
         "policy_version": policy_version,
@@ -110,10 +108,13 @@ def _person(person_id: str, role: str) -> dict[str, str]:
 
 def _payment_is_non_cash(expense: dict[str, Any]) -> bool:
     if "items" in expense:
-        return all(
-            item.get("payment_method", "BANK_TRANSFER") != "CASH" for item in expense["items"]
+        return bool(
+            all(
+                item.get("payment_method", "BANK_TRANSFER") != "CASH"
+                for item in expense["items"]
+            )
         )
-    return expense.get("payment_method", "BANK_TRANSFER") != "CASH"
+    return bool(expense.get("payment_method", "BANK_TRANSFER") != "CASH")
 
 
 def _build_lines(
@@ -264,8 +265,8 @@ def _suspicion_flags(concise: dict[str, Any]) -> list[str]:
 
 def _audit_timestamp(submitted_at: str, seconds_after_submission: int) -> str:
     timestamp = datetime.fromisoformat(submitted_at.replace("Z", "+00:00"))
-    return (timestamp + timedelta(seconds=seconds_after_submission)).isoformat().replace(
-        "+00:00", "Z"
+    return (
+        (timestamp + timedelta(seconds=seconds_after_submission)).isoformat().replace("+00:00", "Z")
     )
 
 
@@ -316,9 +317,7 @@ def _audit_events(
     return events
 
 
-def expand(
-    concise: dict[str, Any], profile: dict[str, Any], policy_version: str
-) -> dict[str, Any]:
+def expand(concise: dict[str, Any], profile: dict[str, Any], policy_version: str) -> dict[str, Any]:
     """Expand a concise fixture input into a full input envelope."""
     if policy_version != profile.get("policy_version"):
         raise ValueError("policy_version must match organization_profile.policy_version")
@@ -401,9 +400,7 @@ def expand(
         "organization_profile": profile,
         "case": case,
         "control_state": "PAUSED" if paused else "ACTIVE",
-        "audit_events": _audit_events(
-            digest, policy_version, concise["submitted_at"], paused
-        ),
+        "audit_events": _audit_events(digest, policy_version, concise["submitted_at"], paused),
     }
     return envelope
 

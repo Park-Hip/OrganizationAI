@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from _artifacts import POLICY_VERSION, PROFILE, RULES, TEST_CASES, VERIFY_CASES
 from _expand import _declared_total, materialize_envelope
 
 
-def _terminal_rule_ids(case: dict) -> list[str]:
+def _terminal_rule_ids(case: dict[str, Any]) -> list[str]:
     expected_processing = case["expected"].get("processing_result")
     if expected_processing is None:
         return []

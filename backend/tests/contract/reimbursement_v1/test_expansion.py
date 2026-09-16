@@ -84,7 +84,10 @@ def test_expansion_binds_generated_identifiers_to_the_full_snapshot() -> None:
     different_policy = expand(concise, different_profile, "1.3.0")
 
     assert current["case"]["case_id"] != different_policy["case"]["case_id"]
-    assert current["audit_events"][0]["input_hash"] != different_policy["audit_events"][0]["input_hash"]
+    assert (
+        current["audit_events"][0]["input_hash"]
+        != different_policy["audit_events"][0]["input_hash"]
+    )
 
 
 def test_expansion_rejects_policy_profile_version_mismatch() -> None:
@@ -182,9 +185,7 @@ def test_non_cash_payment_proof_uses_non_cash_verification() -> None:
 
     envelope = expand(concise, PROFILE, POLICY_VERSION)
     payment_proof = next(
-        evidence
-        for evidence in envelope["case"]["evidence"]
-        if evidence["type"] == "PAYMENT_PROOF"
+        evidence for evidence in envelope["case"]["evidence"] if evidence["type"] == "PAYMENT_PROOF"
     )
 
     assert envelope["case"]["non_cash_evidence_verified"] is False
@@ -203,9 +204,7 @@ def test_non_cash_verification_defaults_false_without_payment_proof() -> None:
     envelope = expand(concise, PROFILE, POLICY_VERSION)
 
     assert envelope["case"]["non_cash_evidence_verified"] is False
-    assert not any(
-        evidence["type"] == "PAYMENT_PROOF" for evidence in envelope["case"]["evidence"]
-    )
+    assert not any(evidence["type"] == "PAYMENT_PROOF" for evidence in envelope["case"]["evidence"])
 
 
 def test_materialized_outcome_follows_initial_audit_events() -> None:

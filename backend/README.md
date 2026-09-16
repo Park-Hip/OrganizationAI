@@ -122,7 +122,8 @@ CI intentionally fails its v1 source-contract job while that directory is absent
 
 A `legacy` failure usually means the historical fixture under `tests/fixtures/legacy_tmp_dev_001/` no longer matches the frozen reader schema.
 Check that the fixture still carries the `TMP-DEV-001`, `SYNTHETIC`, `TEMPORARY_DEVELOPMENT`, and `UNVALIDATED` provenance and has not been mixed with the `policy-forge-baseline` corpus.
-An integration error, rather than a skip, means `TEST_DATABASE_URL` is set but its database is unreachable or its schema is stale.
+When `TEST_DATABASE_URL` names an unreachable database, integration tests skip with a `temporary-history test database unavailable` message.
+An integration error after the database is reachable can mean its schema is stale.
 Recreate the synthetic-only database and rerun `uv run alembic upgrade head` against it.
 Formatting, lint, and type failures are the first CI checks; reproduce them locally with `uv run ruff format --check .`, `uv run ruff check .`, and `uv run mypy app tests`.
 

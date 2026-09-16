@@ -101,7 +101,7 @@ The five-case Verify suite supplies a short, repeatable demonstration.
 The Verify suite determinism key is:
 
 ```text
-normalized_input_hash + policy_version + organization_profile.profile_id
+normalized_structural_input + policy_version + organization_profile.profile_id + organization_profile.profile_version
 ```
 
 ## 4. Acceptance criteria

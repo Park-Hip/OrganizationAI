@@ -8,7 +8,7 @@ Its operational `/health` readiness endpoint remains intentionally limited to pr
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
 No real reimbursement workflow, payment, or policy claim is implied.
 
-> **Sprint 1 direction:** This runnable temporary backend is historical synthetic material, not the next product path. Sprint 1 implements a separate reimbursement-v1 path: deterministic policy evaluation and immutable audit history first, then a bounded single AI intake and packet-preparation agent. Do not add agent features, policy behavior, or new demo controls to `TMP-DEV-001`. See [ADR-012](../docs/ADRs/012_single-agent-sprint-1-pilot.md) and [the target architecture](../docs/07_architecture.md).
+> **Sprint 1 direction:** This runnable temporary backend is historical synthetic material, not the current product path. The reimbursement-v1 deterministic evaluator is implemented. Separate immutable audit history, then a bounded single AI intake and packet-preparation agent, remain next. Do not add agent features, policy behavior, or new demo controls to `TMP-DEV-001`. See [ADR-012](../docs/ADRs/012_single-agent-sprint-1-pilot.md) and [the target architecture](../docs/07_architecture.md).
 
 ## Prerequisites
 

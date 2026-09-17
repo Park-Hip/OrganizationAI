@@ -1,12 +1,13 @@
 """Published pure evaluator seam for reimbursement v1.
 
-SETUP-04 freezes this signature only. Lane A supplies the deterministic rule
+SETUP-04 freezes this signature. Lane A provides the deterministic rule
 implementation without changing the domain or infrastructure boundary.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
+
 from app.domain.reimbursement import (
     ApprovalStatus,
     ControlState,
@@ -14,7 +15,6 @@ from app.domain.reimbursement import (
     EscalationType,
     EvidenceType,
     FlowType,
-    LineAssessment,
     OrganizationProfile,
     PolicySnapshot,
     PrerequisiteConsultation,
@@ -118,9 +118,7 @@ def _build_escalation(
             f"Vui lòng cung cấp bằng chứng hoặc thông tin xác thực cho hồ sơ {case_id}."
         )
         response_format = "Cung cấp bằng chứng rõ ràng hoặc xác nhận lại các dữ kiện liên quan."
-        resume_action = (
-            f"Chạy lại quy tắc xử lý sau khi nhận được bằng chứng hợp lệ cho {case_id}."
-        )
+        resume_action = f"Chạy lại quy tắc xử lý sau khi nhận được bằng chứng hợp lệ cho {case_id}."
     elif escalation_type is EscalationType.OUT_OF_POLICY:
         specific_question = (
             f"Phê duyệt ngoại lệ cho khoản chi không phù hợp chính sách của hồ sơ {case_id}?"
@@ -129,7 +127,8 @@ def _build_escalation(
         resume_action = f"Tiếp tục xử lý sau quyết định của {addressee_role} cho {case_id}."
     else:  # AUTHORITY_REQUIRED
         specific_question = (
-            f"{addressee_role} xem xét và phê duyệt/từ chối hồ sơ {case_id} vượt thẩm quyền thường quy?"
+            f"{addressee_role} xem xét và phê duyệt/từ chối hồ sơ {case_id} vượt thẩm quyền "
+            "thường quy?"
         )
         response_format = "Approve hoặc Reject kèm lý do và phạm vi thẩm quyền được ghi nhận."
         resume_action = f"Tiếp tục xử lý sau quyết định có thẩm quyền cho {case_id}."
@@ -166,9 +165,7 @@ def _build_escalation(
     )
 
 
-def _resolve_evidence_ids(
-    case: ReimbursementCase, ids: tuple[str, ...]
-) -> tuple[str, ...]:
+def _resolve_evidence_ids(case: ReimbursementCase, ids: tuple[str, ...]) -> tuple[str, ...]:
     """Ensure at least one evidence ID is present for the Escalation contract."""
     return ids if ids else tuple(evidence.evidence_id for evidence in case.evidence)
 
@@ -206,6 +203,7 @@ def _escalate(
 # Rule helpers — each returns a ProcessingPacket or None
 # ---------------------------------------------------------------------------
 
+
 def _rule_sys_001(case: ReimbursementCase) -> ProcessingPacket | None:
     """Pause: halt before every other rule."""
     if case.paused:
@@ -218,12 +216,18 @@ def _rule_fact_001(case: ReimbursementCase) -> ProcessingPacket | None:
     for evidence in case.evidence:
         if not evidence.readable:
             return _escalate(
-                case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
+                case,
+                EscalationType.FACT_UNKNOWN,
+                "MEMBER",
+                "RULE-FACT-001",
                 (evidence.evidence_id,),
             )
         if evidence.ocr_confidence is not None and evidence.ocr_confidence < 0.5:
             return _escalate(
-                case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
+                case,
+                EscalationType.FACT_UNKNOWN,
+                "MEMBER",
+                "RULE-FACT-001",
                 (evidence.evidence_id,),
             )
     return None
@@ -257,9 +261,7 @@ def _rule_fact_002(case: ReimbursementCase) -> ProcessingPacket | None:
             )
     if line_total != case.declared_total_vnd:
         conflicting_evidence_ids.extend(
-            evidence.evidence_id
-            for evidence in case.evidence
-            if evidence.type in supporting_types
+            evidence.evidence_id for evidence in case.evidence if evidence.type in supporting_types
         )
     if conflicting_evidence_ids:
         return _escalate(
@@ -324,7 +326,10 @@ def _rule_fact_003(case: ReimbursementCase) -> ProcessingPacket | None:
         for flag in item.suspicion_flags:
             if flag == "VENDOR_IDENTITY_UNVERIFIED":
                 return _escalate(
-                    case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-003",
+                    case,
+                    EscalationType.FACT_UNKNOWN,
+                    "MEMBER",
+                    "RULE-FACT-003",
                     tuple(item.evidence_ids),
                 )
     return None
@@ -353,17 +358,29 @@ def _rule_scope_001(case: ReimbursementCase) -> ProcessingPacket | None:
     """Expense has no demonstrable link to an approved club task or event."""
     for item in case.expense_items:
         if "NO_EVENT_LINK" in item.suspicion_flags:
-            return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-SCOPE-001",
-                             tuple(item.evidence_ids))
+            return _escalate(
+                case,
+                EscalationType.OUT_OF_POLICY,
+                "CLUB_CHAIR",
+                "RULE-SCOPE-001",
+                tuple(item.evidence_ids),
+            )
     return None
 
 
-def _rule_scope_002(case: ReimbursementCase, profile: OrganizationProfile) -> ProcessingPacket | None:
+def _rule_scope_002(
+    case: ReimbursementCase, profile: OrganizationProfile
+) -> ProcessingPacket | None:
     """Legally prohibited category."""
     for item in case.expense_items:
         if item.category in profile.legally_prohibited_categories:
-            return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-SCOPE-002",
-                             tuple(item.evidence_ids))
+            return _escalate(
+                case,
+                EscalationType.OUT_OF_POLICY,
+                "CLUB_CHAIR",
+                "RULE-SCOPE-002",
+                tuple(item.evidence_ids),
+            )
     return None
 
 
@@ -377,12 +394,25 @@ def _rule_cat_001(case: ReimbursementCase, profile: OrganizationProfile) -> Proc
     )
     for item in case.expense_items:
         if item.category not in all_known:
-            return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-CAT-001",
-                             tuple(item.evidence_ids))
-        if item.category in profile.prohibited_categories and item.category not in profile.legally_prohibited_categories:
+            return _escalate(
+                case,
+                EscalationType.OUT_OF_POLICY,
+                "CLUB_CHAIR",
+                "RULE-CAT-001",
+                tuple(item.evidence_ids),
+            )
+        if (
+            item.category in profile.prohibited_categories
+            and item.category not in profile.legally_prohibited_categories
+        ):
             if item.category != "alcohol":
-                return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-CAT-001",
-                                 tuple(item.evidence_ids))
+                return _escalate(
+                    case,
+                    EscalationType.OUT_OF_POLICY,
+                    "CLUB_CHAIR",
+                    "RULE-CAT-001",
+                    tuple(item.evidence_ids),
+                )
     return None
 
 
@@ -390,10 +420,14 @@ def _rule_cat_002(case: ReimbursementCase) -> ProcessingPacket | None:
     """Alcohol category escalation."""
     for item in case.expense_items:
         if item.category == "alcohol":
-            consultations = (PrerequisiteConsultation(
-                role="PARENT_ADVISOR",
-                requirement="Auditable prerequisite consultation before the single Club Chair decision.",
-            ),)
+            consultations = (
+                PrerequisiteConsultation(
+                    role="PARENT_ADVISOR",
+                    requirement=(
+                        "Auditable prerequisite consultation before the single Club Chair decision."
+                    ),
+                ),
+            )
             outcome, escalation = _build_escalation(
                 escalation_type=EscalationType.OUT_OF_POLICY,
                 addressee_role="CLUB_CHAIR",
@@ -419,7 +453,10 @@ def _rule_cat_003(case: ReimbursementCase, profile: OrganizationProfile) -> Proc
             has_approval = bool(case.prior_approval_ids)
             if not has_approval:
                 return _escalate(
-                    case, EscalationType.AUTHORITY_REQUIRED, "CLUB_CHAIR", "RULE-CAT-003",
+                    case,
+                    EscalationType.AUTHORITY_REQUIRED,
+                    "CLUB_CHAIR",
+                    "RULE-CAT-003",
                     tuple(item.evidence_ids),
                 )
     return None
@@ -443,9 +480,7 @@ def _rule_doc_001(case: ReimbursementCase) -> ProcessingPacket | None:
         if not case.advance_reference or not case.advance_amount_vnd:
             missing.append("advance_reference_or_amount")
 
-    has_payment_proof = any(
-        e.type is EvidenceType.PAYMENT_PROOF for e in case.evidence
-    )
+    has_payment_proof = any(e.type is EvidenceType.PAYMENT_PROOF for e in case.evidence)
     if not has_payment_proof:
         missing.append("payment_proof")
 
@@ -462,7 +497,13 @@ def _rule_deadline_001(
     deadline = profile.submission_deadline_business_days
     submitted_after = case.submitted_business_days_after_end
     if submitted_after is not None and submitted_after > deadline:
-        return _escalate(case, EscalationType.AUTHORITY_REQUIRED, "CLUB_CHAIR", "RULE-DEADLINE-001", ())
+        return _escalate(
+            case,
+            EscalationType.AUTHORITY_REQUIRED,
+            "CLUB_CHAIR",
+            "RULE-DEADLINE-001",
+            (),
+        )
     return None
 
 
@@ -472,7 +513,11 @@ def _rule_budget_001(
     """Verified eligible amount exceeds remaining approved budget."""
     if eligible_total > case.remaining_budget_vnd:
         return _escalate(
-            case, EscalationType.AUTHORITY_REQUIRED, "CLUB_CHAIR", "RULE-BUDGET-001", (),
+            case,
+            EscalationType.AUTHORITY_REQUIRED,
+            "CLUB_CHAIR",
+            "RULE-BUDGET-001",
+            (),
             amount_vnd=eligible_total,
             threshold_vnd=case.remaining_budget_vnd,
         )
@@ -485,7 +530,13 @@ def _rule_conflict_001(case: ReimbursementCase) -> ProcessingPacket | None:
         case.proposed_approver is not None
         and case.requester.person_id == case.proposed_approver.person_id
     ):
-        return _escalate(case, EscalationType.AUTHORITY_REQUIRED, "CLUB_CHAIR", "RULE-CONFLICT-001", ())
+        return _escalate(
+            case,
+            EscalationType.AUTHORITY_REQUIRED,
+            "CLUB_CHAIR",
+            "RULE-CONFLICT-001",
+            (),
+        )
     return None
 
 
@@ -507,9 +558,7 @@ def _aggregate_related_lines(
     return groups
 
 
-def _rule_agg_001(
-    groups: dict[tuple[str, ...], list[int]]
-) -> tuple[str, ...] | None:
+def _rule_agg_001(groups: dict[tuple[str, ...], list[int]]) -> tuple[str, ...] | None:
     """Aggregate related lines before threshold and tax checks. Non-terminal.
 
     Returns the rule id to prepend when aggregation is detected, otherwise None.
@@ -578,8 +627,7 @@ def _rule_tax_001(
     if (
         profile.tax_regime_applies
         and any(
-            total >= profile.non_cash_evidence_threshold_vnd
-            for total in related_purchase_totals
+            total >= profile.non_cash_evidence_threshold_vnd for total in related_purchase_totals
         )
         and case.non_cash_evidence_verified is not True
     ):
@@ -632,7 +680,7 @@ def _rule_calc_002(
 
 def _rule_routine_001(
     case: ReimbursementCase, eligible_total: int, extra_rule_ids: tuple[str, ...] = ()
-) -> ProcessingPacket | None:
+) -> ProcessingPacket:
     """No higher-priority rule applied; produce a review packet."""
     rules = (*extra_rule_ids, "RULE-ROUTINE-001")
     outcome = _build_outcome(
@@ -642,9 +690,7 @@ def _rule_routine_001(
         eligible_total_vnd=eligible_total,
         amount_to_return_vnd=None,
         additional_payment_vnd=None,
-        reimbursement_amount_vnd=eligible_total
-        if case.flow_type is FlowType.MEMBER_PAID
-        else None,
+        reimbursement_amount_vnd=eligible_total if case.flow_type is FlowType.MEMBER_PAID else None,
         case_id=case.case_id,
     )
     return ProcessingPacket(control_state=ControlState.ACTIVE, outcome=outcome)
@@ -653,6 +699,7 @@ def _rule_routine_001(
 # ---------------------------------------------------------------------------
 # Main dispatcher
 # ---------------------------------------------------------------------------
+
 
 def _evaluate_policy(
     case: ReimbursementCase,
@@ -715,15 +762,11 @@ def _evaluate_policy(
 
     # 62 — aggregation (non-terminal)
     related_purchase_groups = _aggregate_related_lines(case, profile_snapshot)
-    related_purchase_totals = tuple(
-        sum(amounts) for amounts in related_purchase_groups.values()
-    )
+    related_purchase_totals = tuple(sum(amounts) for amounts in related_purchase_groups.values())
     extra_rule_ids = _rule_agg_001(related_purchase_groups) or ()
 
     # 63 — authority threshold
-    pkt = _rule_auth_001(
-        case, profile_snapshot, related_purchase_totals, extra_rule_ids
-    )
+    pkt = _rule_auth_001(case, profile_snapshot, related_purchase_totals, extra_rule_ids)
     if pkt is not None:
         return pkt
 
@@ -753,6 +796,7 @@ def _eligible_total(case: ReimbursementCase) -> int:
 # ---------------------------------------------------------------------------
 # Packet validation (ported from SETUP-04 skeleton)
 # ---------------------------------------------------------------------------
+
 
 def _validate_packet_for_case(
     case: ReimbursementCase,

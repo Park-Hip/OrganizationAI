@@ -20,7 +20,7 @@ It defines our branch, commit, and pull-request rules.
 
 ## Backend development
 
-The backend lives in [backend/](backend/). Its currently wired endpoints are temporary, synthetic, and unvalidated; they are retained only as historical material. The next implementation path is reimbursement v1: deterministic policy evaluation and immutable audit history first, followed by a bounded single-agent adapter and public synthetic Verify surface.
+The backend lives in [backend/](backend/). Its currently wired endpoints are temporary, synthetic, and unvalidated; they are retained only as historical material. The reimbursement-v1 deterministic evaluator is implemented. Separate immutable audit history, followed by a bounded single-agent adapter and public synthetic Verify surface, remains next.
 
 Read [backend/README.md](backend/README.md) for clean-clone prerequisites, quality commands, and the legacy/v1 boundary. Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 

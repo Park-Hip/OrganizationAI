@@ -2,11 +2,11 @@
 
 ## Current status
 
-The project has adopted [the reimbursement workflow baseline](01_manual_reimbursement_workflow.md) derived from Policy Forge v1.2. It defines the workflow to be implemented next; it is not evidence that a real case may be processed yet.
+The project has adopted [the reimbursement workflow baseline](01_manual_reimbursement_workflow.md) derived from Policy Forge v1.2. Its deterministic evaluator is implemented; it is not evidence that a real case may be processed yet.
 
 Sprint 1 is a synthetic, AI-led reimbursement case-preparation demo. One AI agent guides intake and prepares a review packet, while the deterministic versioned policy engine remains the sole source of classifications, calculations, rule IDs, and escalation types. See [ADR-012](ADRs/012_single-agent-sprint-1-pilot.md). The public Sprint 1 surface is no-login and synthetic-only; real authentication, real intake, and settlement remain deferred.
 
-The current backend still contains legacy synthetic `TMP-DEV-001` behavior while the workflow, MVP, policy, system contract, and corpus transition into implementation. The former temporary source documents have been removed from the working documentation; Git history retains them. Temporary records and endpoints remain synthetic historical material and are not a club policy, financial procedure, user-research finding, or public-demo evidence.
+The current backend still contains legacy synthetic `TMP-DEV-001` behavior while reimbursement-v1 implementation continues from its deterministic evaluator to persistence and public synthetic surfaces. The former temporary source documents have been removed from the working documentation; Git history retains them. Temporary records and endpoints remain synthetic historical material and are not a club policy, financial procedure, user-research finding, or public-demo evidence.
 
 ## Read in this order
 

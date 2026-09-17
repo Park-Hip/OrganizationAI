@@ -15,6 +15,7 @@ import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 
@@ -22,7 +23,6 @@ from app.domain.reimbursement import (
     ApprovalStatus,
     ControlState,
     DuplicateCheckState,
-    EscalationType,
     Evidence,
     EvidenceType,
     ExpenseItem,
@@ -48,14 +48,16 @@ _POLICY_FORGE = _BACKEND_ROOT.parent / "policy-forge-baseline"
 _TEST_CASES_PATH = _POLICY_FORGE / "test_cases.json"
 _VERIFY_CASES_PATH = _POLICY_FORGE / "verify_cases.json"
 
+JsonObject = dict[str, Any]
+
 # ---------------------------------------------------------------------------
 # Load fixtures
 # ---------------------------------------------------------------------------
 
 
-def _load_json(path: Path) -> dict:
+def _load_json(path: Path) -> JsonObject:
     with path.open(encoding="utf-8") as fh:
-        return json.load(fh)
+        return cast(JsonObject, json.load(fh))
 
 
 _TEST_CASES = _load_json(_TEST_CASES_PATH)
@@ -80,7 +82,15 @@ _DEFAULT_PROFILE = {
     "non_cash_rule_is_conditional": True,
     "aggregation_keys": ("vendor_normalized", "transaction_date", "purpose_code"),
     "allowed_categories": frozenset(
-        {"venue", "transport", "printing", "supplies", "communication", "approved_food", "approved_service"}
+        {
+            "venue",
+            "transport",
+            "printing",
+            "supplies",
+            "communication",
+            "approved_food",
+            "approved_service",
+        }
     ),
     "conditional_categories": frozenset({"gift", "honorarium", "equipment", "late_submission"}),
     "prohibited_categories": frozenset({"alcohol", "tobacco", "personal_expense"}),
@@ -123,7 +133,7 @@ def policy_snapshot() -> PolicySnapshot:
     )
 
 
-def _make_case(concise: dict) -> ReimbursementCase:
+def _make_case(concise: JsonObject) -> ReimbursementCase:
     """Build a ReimbursementCase from a concise fixture input dict."""
     flow_type = concise["flow_type"]
     expense = concise.get("expense", {})
@@ -244,7 +254,6 @@ def _make_case(concise: dict) -> ReimbursementCase:
         )
 
     duplicate_check_raw = concise.get("duplicate_check", "CLEAR")
-    from app.domain.reimbursement import DuplicateCheckState
     duplicate_check = DuplicateCheckState(duplicate_check_raw) if duplicate_check_raw else None
 
     budget = concise.get("budget", {})
@@ -271,29 +280,37 @@ def _make_case(concise: dict) -> ReimbursementCase:
         remaining_budget_vnd=int(budget.get("remaining_vnd", 10_000_000)),
         prior_approval_ids=("APR-SYN-001",) if prior_approval else (),
         prior_payment_reference=concise.get("prior_payment_reference"),
-        advance_reference=concise.get("advance_reference", "ADV-SYN-001") if flow_type == FlowType.ADVANCE_SETTLEMENT else None,
-        advance_amount_vnd=int(concise.get("advance_amount_vnd", 0)) if flow_type == FlowType.ADVANCE_SETTLEMENT else None,
+        advance_reference=concise.get("advance_reference", "ADV-SYN-001")
+        if flow_type == FlowType.ADVANCE_SETTLEMENT
+        else None,
+        advance_amount_vnd=int(concise.get("advance_amount_vnd", 0))
+        if flow_type == FlowType.ADVANCE_SETTLEMENT
+        else None,
         expense_items=tuple(expense_items),
         evidence=tuple(evidence_records),
         declared_total_vnd=int(declared_total),
-        non_cash_evidence_verified=evidence_cfg.get("non_cash_verified") if "non_cash_verified" in evidence_cfg else None,
+        non_cash_evidence_verified=evidence_cfg.get("non_cash_verified")
+        if "non_cash_verified" in evidence_cfg
+        else None,
         reimbursement_account=MaskedReimbursementAccount(
             account_name="Synthetic Member",
             bank_name="Synthetic Bank",
             masked_account_number="*****0001",
         ),
-            proposed_approver=PersonRef(
-                person_id=proposed_id,
-                display_name=f"Synthetic {proposed_id}",
-                role="TREASURER",
-            ),
+        proposed_approver=PersonRef(
+            person_id=proposed_id,
+            display_name=f"Synthetic {proposed_id}",
+            role="TREASURER",
+        ),
         duplicate_check=duplicate_check,
         submitted_business_days_after_end=int(days_late),
         paused=bool(concise.get("paused", False)),
     )
 
 
-def _runEvaluate(concise: dict, profile: OrganizationProfile, ps: PolicySnapshot) -> ProcessingPacket:
+def _runEvaluate(
+    concise: JsonObject, profile: OrganizationProfile, ps: PolicySnapshot
+) -> ProcessingPacket:
     case = _make_case(concise)
     # Apply profile overrides if present
     overrides = concise.get("profile_overrides")
@@ -309,7 +326,9 @@ def _runEvaluate(concise: dict, profile: OrganizationProfile, ps: PolicySnapshot
 
 
 @pytest.mark.parametrize("case", _TEST_CASES["cases"])
-def test_canonical_case_matches_expected(case: dict, default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
+def test_canonical_case_matches_expected(
+    case: JsonObject, default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot
+) -> None:
     concise = case["input"]
     expected = case["expected"]
     packet = _runEvaluate(concise, default_profile, policy_snapshot)
@@ -364,7 +383,7 @@ def test_canonical_case_matches_expected(case: dict, default_profile: Organizati
 
 @pytest.mark.parametrize("verify_case", _VERIFY_CASES["cases"])
 def test_verify_case_is_deterministic(
-    verify_case: dict,
+    verify_case: JsonObject,
     default_profile: OrganizationProfile,
     policy_snapshot: PolicySnapshot,
 ) -> None:
@@ -403,10 +422,16 @@ def test_every_escalated_result_has_all_required_escalation_fields(
 # ---------------------------------------------------------------------------
 
 
-def test_sys_001_halts_before_other_rules(default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
+def test_sys_001_halts_before_other_rules(
+    default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot
+) -> None:
     """A paused case returns PAUSED with no outcome and no escalation."""
     packet = _runEvaluate(
-        {"flow_type": "MEMBER_PAID", "expense": {"total_vnd": 100000, "category": "printing"}, "paused": True},
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 100000, "category": "printing"},
+            "paused": True,
+        },
         default_profile,
         policy_snapshot,
     )
@@ -415,9 +440,17 @@ def test_sys_001_halts_before_other_rules(default_profile: OrganizationProfile, 
     assert packet.escalation is None
 
 
-def test_sys_001_with_active_control_state_raises(default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
+def test_sys_001_with_active_control_state_raises(
+    default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot
+) -> None:
     """A paused case submitted with ACTIVE control state must raise."""
-    case = _make_case({"flow_type": "MEMBER_PAID", "expense": {"total_vnd": 100000, "category": "printing"}, "paused": True})
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 100000, "category": "printing"},
+            "paused": True,
+        }
+    )
     with pytest.raises(ValueError, match="paused case requires"):
         evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
 
@@ -429,16 +462,19 @@ def test_sys_001_with_active_control_state_raises(default_profile: OrganizationP
 
 @pytest.mark.parametrize("case", _TEST_CASES["cases"])
 def test_calculation_fields_are_arithmetically_exact(
-    case: dict,
+    case: JsonObject,
     default_profile: OrganizationProfile,
     policy_snapshot: PolicySnapshot,
 ) -> None:
     if case["expected"].get("processing_result") != "ROUTINE_PROCESSED":
         return
     packet = _runEvaluate(case["input"], default_profile, policy_snapshot)
+    assert packet.outcome is not None
     assert packet.outcome.eligible_total_vnd == case["expected"]["eligible_total_vnd"]
     if case["input"]["flow_type"] == FlowType.MEMBER_PAID:
-        assert packet.outcome.reimbursement_amount_vnd == case["expected"]["reimbursement_amount_vnd"]
+        assert (
+            packet.outcome.reimbursement_amount_vnd == case["expected"]["reimbursement_amount_vnd"]
+        )
     else:
         advance = int(case["input"].get("advance_amount_vnd", 0))
         eligible = case["expected"]["eligible_total_vnd"]
@@ -451,7 +487,9 @@ def test_calculation_fields_are_arithmetically_exact(
 # ---------------------------------------------------------------------------
 
 
-def test_no_result_grants_approval_or_rejection(default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
+def test_no_result_grants_approval_or_rejection(
+    default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot
+) -> None:
     """Every agent-produced outcome must remain PENDING_HUMAN_APPROVAL."""
     for case in _TEST_CASES["cases"]:
         if case["expected"].get("control_state") == "PAUSED":
@@ -501,7 +539,9 @@ print("evaluator-import-boundary-ok")
 # ---------------------------------------------------------------------------
 
 
-def test_evaluator_does_not_mutate_inputs(default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
+def test_evaluator_does_not_mutate_inputs(
+    default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot
+) -> None:
     concise = _TEST_CASES["cases"][0]["input"]
     case = _make_case(concise)
     case_before = case.model_dump()
@@ -553,8 +593,7 @@ def test_fact_003_requires_verified_evidence(
     case = case.model_copy(
         update={
             "evidence": tuple(
-                evidence.model_copy(update={"verified": False})
-                for evidence in case.evidence
+                evidence.model_copy(update={"verified": False}) for evidence in case.evidence
             )
         }
     )
@@ -572,22 +611,24 @@ def test_tax_001_uses_related_purchase_totals(
     packet = _runEvaluate(
         {
             "flow_type": "MEMBER_PAID",
-            "expense": {"items": [
-                {
-                    "vendor": "A",
-                    "transaction_date": "2026-08-05",
-                    "purpose_code": "ONE",
-                    "category": "printing",
-                    "amount_vnd": 3_000_000,
-                },
-                {
-                    "vendor": "B",
-                    "transaction_date": "2026-08-05",
-                    "purpose_code": "TWO",
-                    "category": "printing",
-                    "amount_vnd": 3_000_000,
-                },
-            ]},
+            "expense": {
+                "items": [
+                    {
+                        "vendor": "A",
+                        "transaction_date": "2026-08-05",
+                        "purpose_code": "ONE",
+                        "category": "printing",
+                        "amount_vnd": 3_000_000,
+                    },
+                    {
+                        "vendor": "B",
+                        "transaction_date": "2026-08-05",
+                        "purpose_code": "TWO",
+                        "category": "printing",
+                        "amount_vnd": 3_000_000,
+                    },
+                ]
+            },
             "evidence": {"non_cash_verified": False},
             "profile_overrides": {"routine_processing_max_vnd": 10_000_000},
         },
@@ -684,8 +725,7 @@ def test_fact_003_rejects_financial_evidence_without_amount(
         update={
             "evidence": tuple(
                 evidence.model_copy(update={"amount_vnd": None})
-                if evidence.type
-                in (EvidenceType.INVOICE, EvidenceType.PAYMENT_PROOF)
+                if evidence.type in (EvidenceType.INVOICE, EvidenceType.PAYMENT_PROOF)
                 else evidence
                 for evidence in case.evidence
             )

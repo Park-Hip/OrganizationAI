@@ -168,7 +168,7 @@ Migration requirements:
 
 ## Sprint 1 implementation order
 
-1. Implement the deterministic reimbursement evaluator and pass the 29-case corpus plus five-case Verify suite.
+1. The deterministic reimbursement evaluator is implemented and covered by the 29-case corpus plus five-case Verify suite.
 2. Add separate immutable v1 case/outcome/audit persistence; do not convert or dual-write legacy records.
 3. Expose a labelled public synthetic Verify/API path that uses the same evaluator and fixed server-owned synthetic actors.
 4. Add the bounded single-agent adapter with schema-validated tools and agent-action audit metadata.

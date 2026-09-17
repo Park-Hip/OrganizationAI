@@ -6,9 +6,20 @@ and deliberately separate from the historical TMP-DEV-001 domain models.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+import re
+from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.reimbursement.enums import (
     ApprovalStatus,
@@ -82,30 +93,28 @@ class OrganizationProfile(FrozenDomainModel):
     effective_date: date | None
     parent_organization: str
     accounting_regime: str
-    tax_regime_applies: bool
+    tax_regime_applies: StrictBool
     currency: str = "VND"
-    submission_deadline_business_days: int = Field(ge=0)
-    routine_processing_max_vnd: int = Field(ge=0)
+    submission_deadline_business_days: StrictInt = Field(ge=0)
+    routine_processing_max_vnd: StrictInt = Field(ge=0)
     authority_threshold_operator: AuthorityThresholdOperator
-    non_cash_evidence_threshold_vnd: int = Field(ge=0)
-    non_cash_rule_is_conditional: bool
+    non_cash_evidence_threshold_vnd: StrictInt = Field(ge=0)
+    non_cash_rule_is_conditional: StrictBool
     aggregation_keys: tuple[str, ...]
     allowed_categories: frozenset[str]
     conditional_categories: frozenset[str]
     prohibited_categories: frozenset[str]
     legally_prohibited_categories: frozenset[str]
     roles: RoleSet
-    no_self_approval: bool = True
-    agent_can_approve: bool = False
-    agent_can_reject: bool = False
-    agent_can_transfer_money: bool = False
-    raw_ocr_retention_days: int = Field(ge=0)
+    no_self_approval: StrictBool = True
+    agent_can_approve: StrictBool = False
+    agent_can_reject: StrictBool = False
+    agent_can_transfer_money: StrictBool = False
+    raw_ocr_retention_days: StrictInt = Field(ge=0)
     official_record_retention: str
 
     @field_validator(
         "profile_id",
-        "profile_version",
-        "policy_version",
         "owner",
         "parent_organization",
         "accounting_regime",
@@ -118,12 +127,21 @@ class OrganizationProfile(FrozenDomainModel):
             raise ValueError("profile text fields must not be blank")
         return value
 
+    @field_validator("profile_version", "policy_version")
+    @classmethod
+    def require_semantic_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+\.\d+", value):
+            raise ValueError("profile and policy versions must use semantic versioning")
+        return value
+
     @model_validator(mode="after")
     def validate_safety_and_categories(self) -> OrganizationProfile:
         if self.currency != "VND":
             raise ValueError("the reimbursement v1 contract supports VND only")
         if not self.aggregation_keys or any(not key.strip() for key in self.aggregation_keys):
             raise ValueError("at least one non-blank aggregation key is required")
+        if len(self.aggregation_keys) != len(set(self.aggregation_keys)):
+            raise ValueError("aggregation keys must be unique")
         categories = (
             self.allowed_categories,
             self.conditional_categories,
@@ -151,11 +169,18 @@ class PolicySnapshot(FrozenDomainModel):
     content_hash: str = Field(min_length=8)
     serialized_policy: str = Field(min_length=1)
 
-    @field_validator("policy_id", "policy_version")
+    @field_validator("policy_id")
     @classmethod
     def require_non_blank_identifier(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("policy identifiers must not be blank")
+        return value
+
+    @field_validator("policy_version")
+    @classmethod
+    def require_semantic_version(cls, value: str) -> str:
+        if not re.fullmatch(r"\d+\.\d+\.\d+", value):
+            raise ValueError("policy version must use semantic versioning")
         return value
 
 
@@ -165,12 +190,12 @@ class Evidence(FrozenDomainModel):
     evidence_id: str
     type: EvidenceType
     file_hash: str = Field(min_length=8)
-    readable: bool
-    verified: bool
-    ocr_confidence: float | None = Field(default=None, ge=0, le=1)
+    readable: StrictBool
+    verified: StrictBool
+    ocr_confidence: StrictFloat | StrictInt | None = Field(default=None, ge=0, le=1)
     document_number: str | None = None
     document_date: date | None = None
-    amount_vnd: int | None = Field(default=None, ge=0)
+    amount_vnd: StrictInt | None = Field(default=None, ge=0)
     notes: str | None = None
     approval_decision_ids: tuple[str, ...] = ()
 
@@ -192,8 +217,8 @@ class ExpenseItem(FrozenDomainModel):
     purpose_code: str
     description: str
     category: str
-    amount_vnd: int = Field(ge=0)
-    tax_amount_vnd: int | None = Field(default=None, ge=0)
+    amount_vnd: StrictInt = Field(ge=0)
+    tax_amount_vnd: StrictInt | None = Field(default=None, ge=0)
     payment_method: PaymentMethod
     evidence_ids: tuple[str, ...] = Field(min_length=1)
     suspicion_flags: tuple[str, ...]
@@ -235,26 +260,26 @@ class ReimbursementCase(FrozenDomainModel):
     case_id: str
     flow_type: FlowType
     requester: PersonRef
-    submitted_at: datetime
+    submitted_at: AwareDatetime
     task_or_event: str
     event_end_date: date
     purpose: str
     budget_code: str
-    approved_budget_vnd: int = Field(ge=0)
-    remaining_budget_vnd: int = Field(ge=0)
+    approved_budget_vnd: StrictInt = Field(ge=0)
+    remaining_budget_vnd: StrictInt = Field(ge=0)
     prior_approval_ids: tuple[str, ...] = ()
     prior_payment_reference: str | None = None
     advance_reference: str | None = None
-    advance_amount_vnd: int | None = Field(default=None, ge=0)
+    advance_amount_vnd: StrictInt | None = Field(default=None, ge=0)
     expense_items: tuple[ExpenseItem, ...] = Field(min_length=1)
     evidence: tuple[Evidence, ...] = Field(min_length=1)
-    declared_total_vnd: int = Field(ge=0)
-    non_cash_evidence_verified: bool | None = None
+    declared_total_vnd: StrictInt = Field(ge=0)
+    non_cash_evidence_verified: StrictBool | None = None
     reimbursement_account: MaskedReimbursementAccount
     proposed_approver: PersonRef | None = None
     duplicate_check: DuplicateCheckState | None = None
-    submitted_business_days_after_end: int | None = Field(default=None, ge=0)
-    paused: bool
+    submitted_business_days_after_end: StrictInt | None = Field(default=None, ge=0)
+    paused: StrictBool
 
     @field_validator("case_id", "task_or_event", "purpose")
     @classmethod
@@ -321,14 +346,14 @@ class ProcessingOutcome(FrozenDomainModel):
     processing_result: ProcessingResult
     escalation_type: EscalationType | None
     approval_status: ApprovalStatus = ApprovalStatus.PENDING_HUMAN_APPROVAL
-    eligible_total_vnd: int | None = Field(default=None, ge=0)
-    amount_to_return_vnd: int | None = Field(default=None, ge=0)
-    additional_payment_vnd: int | None = Field(default=None, ge=0)
-    reimbursement_amount_vnd: int | None = Field(default=None, ge=0)
+    eligible_total_vnd: StrictInt | None = Field(default=None, ge=0)
+    amount_to_return_vnd: StrictInt | None = Field(default=None, ge=0)
+    additional_payment_vnd: StrictInt | None = Field(default=None, ge=0)
+    reimbursement_amount_vnd: StrictInt | None = Field(default=None, ge=0)
     triggered_rule_ids: tuple[str, ...] = Field(min_length=1)
     evidence_used: tuple[str, ...] = ()
     explanation_vi: str = Field(min_length=20)
-    created_at: datetime
+    created_at: AwareDatetime
 
     @field_validator("outcome_id")
     @classmethod
@@ -346,8 +371,19 @@ class ProcessingOutcome(FrozenDomainModel):
                 raise ValueError("ROUTINE_PROCESSED must not have an escalation type")
             if self.eligible_total_vnd is None:
                 raise ValueError("ROUTINE_PROCESSED requires an eligible total")
-        elif self.escalation_type is None:
-            raise ValueError("ESCALATED requires exactly one escalation type")
+        else:
+            if self.escalation_type is None:
+                raise ValueError("ESCALATED requires exactly one escalation type")
+            if any(
+                amount is not None
+                for amount in (
+                    self.eligible_total_vnd,
+                    self.amount_to_return_vnd,
+                    self.additional_payment_vnd,
+                    self.reimbursement_amount_vnd,
+                )
+            ):
+                raise ValueError("ESCALATED must not contain proposed calculations")
         return self
 
 
@@ -380,7 +416,7 @@ class AuditEvent(FrozenDomainModel):
     """Append-only audit value ready for a persistence adapter to record."""
 
     event_id: str
-    timestamp: datetime
+    timestamp: AwareDatetime
     actor_id: str
     actor_type: AuditActorType
     policy_version: str

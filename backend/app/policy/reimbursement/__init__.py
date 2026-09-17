@@ -1,5 +1,5 @@
 """Pure reimbursement v1 policy-processing boundary."""
 
-from app.policy.reimbursement.evaluator import PolicyEvaluator, evaluate
+from app.policy.reimbursement.evaluator import evaluate
 
-__all__ = ["PolicyEvaluator", "evaluate"]
+__all__ = ["evaluate"]

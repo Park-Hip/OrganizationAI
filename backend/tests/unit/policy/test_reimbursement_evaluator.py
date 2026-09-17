@@ -503,15 +503,14 @@ print("evaluator-import-boundary-ok")
 
 def test_evaluator_does_not_mutate_inputs(default_profile: OrganizationProfile, policy_snapshot: PolicySnapshot) -> None:
     concise = _TEST_CASES["cases"][0]["input"]
-    case_before = _make_case(concise).model_dump()
+    case = _make_case(concise)
+    case_before = case.model_dump()
     profile_before = default_profile.model_dump()
 
-    _runEvaluate(concise, default_profile, policy_snapshot)
+    evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
 
-    case_after = _make_case(concise).model_dump()
-    profile_after = default_profile.model_dump()
-    assert case_after == case_before
-    assert profile_after == profile_before
+    assert case.model_dump() == case_before
+    assert default_profile.model_dump() == profile_before
 
 
 def test_fact_002_rejects_payment_proof_amount_conflict(

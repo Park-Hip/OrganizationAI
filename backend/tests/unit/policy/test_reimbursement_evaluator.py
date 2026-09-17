@@ -210,7 +210,7 @@ def _make_case(concise: dict) -> ReimbursementCase:
                 type=EvidenceType.PAYMENT_PROOF,
                 file_hash="sha256-synthetic-pay",
                 readable=bool(readable),
-                verified=bool(non_cash_verified),
+                verified=True,
                 amount_vnd=int(invoice_total),
             )
         )
@@ -512,3 +512,133 @@ def test_evaluator_does_not_mutate_inputs(default_profile: OrganizationProfile, 
     profile_after = default_profile.model_dump()
     assert case_after == case_before
     assert profile_after == profile_before
+
+
+def test_fact_002_rejects_payment_proof_amount_conflict(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    case = case.model_copy(
+        update={
+            "evidence": tuple(
+                evidence.model_copy(update={"amount_vnd": 900_000})
+                if evidence.type is EvidenceType.PAYMENT_PROOF
+                else evidence
+                for evidence in case.evidence
+            )
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-FACT-002",)
+
+
+def test_fact_003_requires_verified_evidence(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    case = case.model_copy(
+        update={
+            "evidence": tuple(
+                evidence.model_copy(update={"verified": False})
+                for evidence in case.evidence
+            )
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-FACT-003",)
+
+
+def test_tax_001_uses_related_purchase_totals(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    packet = _runEvaluate(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"items": [
+                {
+                    "vendor": "A",
+                    "transaction_date": "2026-08-05",
+                    "purpose_code": "ONE",
+                    "category": "printing",
+                    "amount_vnd": 3_000_000,
+                },
+                {
+                    "vendor": "B",
+                    "transaction_date": "2026-08-05",
+                    "purpose_code": "TWO",
+                    "category": "printing",
+                    "amount_vnd": 3_000_000,
+                },
+            ]},
+            "evidence": {"non_cash_verified": False},
+            "profile_overrides": {"routine_processing_max_vnd": 10_000_000},
+        },
+        default_profile,
+        policy_snapshot,
+    )
+
+    assert packet.outcome is not None
+    assert packet.outcome.processing_result is ProcessingResult.ROUTINE_PROCESSED
+
+
+def test_auth_001_uses_profile_owned_over_threshold_role(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    profile = default_profile.model_copy(
+        update={
+            "roles": default_profile.roles.model_copy(
+                update={"approver_over_threshold": "FINANCE_COMMITTEE"}
+            )
+        }
+    )
+    packet = _runEvaluate(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 5_000_001, "category": "printing"},
+        },
+        profile,
+        policy_snapshot,
+    )
+
+    assert packet.escalation is not None
+    assert packet.escalation.addressee_role == "FINANCE_COMMITTEE"
+
+
+def test_duplicate_escalation_references_case_evidence(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+            "duplicate_check": "NOT_RUN",
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.escalation is not None
+    assert packet.escalation.related_evidence == tuple(
+        evidence.evidence_id for evidence in case.evidence
+    )

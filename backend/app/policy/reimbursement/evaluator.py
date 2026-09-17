@@ -7,8 +7,6 @@ implementation without changing the domain or infrastructure boundary.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
-
 from app.domain.reimbursement import (
     ApprovalStatus,
     ControlState,
@@ -102,7 +100,7 @@ def _build_escalation(
     threshold_vnd: int | None,
     related_evidence_ids: tuple[str, ...],
     prerequisite_consultations: tuple[PrerequisiteConsultation, ...] = (),
-) -> tuple[ProcessingOutcome, dict[str, Any]]:
+) -> tuple[ProcessingOutcome, Escalation]:
     """Build an escalated outcome and its matching escalation payload."""
     known_facts = [f"case {case_id}"]
     if amount_vnd is not None:
@@ -152,49 +150,23 @@ def _build_escalation(
         created_at=_FIXTURE_CREATED_AT,
     )
 
-    escalation: dict[str, Any] = {
-        "type": escalation_type,
-        "addressee_role": addressee_role,
-        "related_evidence": list(related_evidence_ids),
-        "known_facts": known_facts,
-        "specific_question": specific_question,
-        "response_format": response_format,
-        "resume_action": resume_action,
-    }
-    if prerequisite_consultations:
-        escalation["prerequisite_consultations"] = [
-            {"role": c.role, "requirement": c.requirement}
-            for c in prerequisite_consultations
-        ]
-
-    return outcome, escalation
-
-
-def _escalation_from_dict(data: dict[str, Any]) -> Escalation:
-    """Build an Escalation from the dict returned by _build_escalation."""
-    consultations = []
-    for c in data.get("prerequisite_consultations", []):
-        consultations.append(
-            PrerequisiteConsultation(role=c["role"], requirement=c["requirement"])
-        )
-    return Escalation(
-        type=data["type"],
-        addressee_role=data["addressee_role"],
-        related_evidence=tuple(data["related_evidence"]),
-        known_facts=tuple(data["known_facts"]),
-        specific_question=data["specific_question"],
-        response_format=data["response_format"],
-        resume_action=data["resume_action"],
-        prerequisite_consultations=tuple(consultations),
+    return outcome, Escalation(
+        type=escalation_type,
+        addressee_role=addressee_role,
+        related_evidence=related_evidence_ids,
+        known_facts=tuple(known_facts),
+        specific_question=specific_question,
+        response_format=response_format,
+        resume_action=resume_action,
+        prerequisite_consultations=prerequisite_consultations,
     )
 
 
-_EMPTY_EVIDENCE_ID = ("E-SYNTHETIC-000",)
-
-
-def _resolve_evidence_ids(ids: tuple[str, ...]) -> tuple[str, ...]:
+def _resolve_evidence_ids(
+    case: ReimbursementCase, ids: tuple[str, ...]
+) -> tuple[str, ...]:
     """Ensure at least one evidence ID is present for the Escalation contract."""
-    return ids if ids else _EMPTY_EVIDENCE_ID
+    return ids if ids else tuple(evidence.evidence_id for evidence in case.evidence)
 
 
 def _escalate(
@@ -208,8 +180,8 @@ def _escalate(
     threshold_vnd: int | None = None,
     prerequisite_consultations: tuple[PrerequisiteConsultation, ...] = (),
 ) -> ProcessingPacket:
-    resolved_ids = _resolve_evidence_ids(related_evidence_ids)
-    outcome, escalation_dict = _build_escalation(
+    resolved_ids = _resolve_evidence_ids(case, related_evidence_ids)
+    outcome, escalation = _build_escalation(
         escalation_type=escalation_type,
         addressee_role=addressee_role,
         case_id=case.case_id,
@@ -222,7 +194,7 @@ def _escalate(
     return ProcessingPacket(
         control_state=ControlState.ACTIVE,
         outcome=outcome,
-        escalation=_escalation_from_dict(escalation_dict),
+        escalation=escalation,
     )
 
 
@@ -256,24 +228,59 @@ def _rule_fact_001(case: ReimbursementCase) -> ProcessingPacket | None:
 
 def _rule_fact_002(case: ReimbursementCase) -> ProcessingPacket | None:
     """Declared total conflicts with evidence amounts."""
-    # Only invoice/receipt amounts count toward the declared-total check;
-    # PAYMENT_PROOF amounts are separate and must not be double-counted.
-    evidence_total = sum(
-        e.amount_vnd for e in case.evidence
-        if e.type in (EvidenceType.INVOICE, EvidenceType.RECEIPT)
-        and e.amount_vnd is not None
+    supporting_types = (
+        EvidenceType.INVOICE,
+        EvidenceType.RECEIPT,
+        EvidenceType.PAYMENT_PROOF,
     )
-    if evidence_total > 0 and evidence_total != case.declared_total_vnd:
-        invoice_ids = tuple(
-            e.evidence_id for e in case.evidence
-            if e.type in (EvidenceType.INVOICE, EvidenceType.RECEIPT)
+    line_total = sum(item.amount_vnd for item in case.expense_items)
+    conflicting_evidence_ids: list[str] = []
+    for evidence_types, expected_total in (
+        ((EvidenceType.INVOICE, EvidenceType.RECEIPT), case.declared_total_vnd),
+        ((EvidenceType.PAYMENT_PROOF,), case.declared_total_vnd),
+        ((EvidenceType.ADVANCE_RECORD,), case.advance_amount_vnd),
+    ):
+        amounts = [
+            evidence.amount_vnd
+            for evidence in case.evidence
+            if evidence.type in evidence_types and evidence.amount_vnd is not None
+        ]
+        if amounts and expected_total is not None and sum(amounts) != expected_total:
+            conflicting_evidence_ids.extend(
+                evidence.evidence_id
+                for evidence in case.evidence
+                if evidence.type in evidence_types
+            )
+    if line_total != case.declared_total_vnd:
+        conflicting_evidence_ids.extend(
+            evidence.evidence_id
+            for evidence in case.evidence
+            if evidence.type in supporting_types
         )
-        return _escalate(case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-002", invoice_ids)
+    if conflicting_evidence_ids:
+        return _escalate(
+            case,
+            EscalationType.FACT_UNKNOWN,
+            "MEMBER",
+            "RULE-FACT-002",
+            tuple(dict.fromkeys(conflicting_evidence_ids)),
+        )
     return None
 
 
 def _rule_fact_003(case: ReimbursementCase) -> ProcessingPacket | None:
     """A required fact cannot be deterministically derived from verified evidence."""
+    unverified_evidence_ids = tuple(
+        evidence.evidence_id for evidence in case.evidence if not evidence.verified
+    )
+    if unverified_evidence_ids:
+        return _escalate(
+            case,
+            EscalationType.FACT_UNKNOWN,
+            "MEMBER",
+            "RULE-FACT-003",
+            unverified_evidence_ids,
+        )
     for item in case.expense_items:
         for flag in item.suspicion_flags:
             if flag == "VENDOR_IDENTITY_UNVERIFIED":
@@ -361,7 +368,7 @@ def _rule_cat_002(case: ReimbursementCase) -> ProcessingPacket | None:
             return ProcessingPacket(
                 control_state=ControlState.ACTIVE,
                 outcome=outcome,
-                escalation=_escalation_from_dict(escalation),
+                escalation=escalation,
             )
     return None
 
@@ -444,13 +451,10 @@ def _rule_conflict_001(case: ReimbursementCase) -> ProcessingPacket | None:
     return None
 
 
-def _rule_agg_001(
+def _aggregate_related_lines(
     case: ReimbursementCase, profile: OrganizationProfile
-) -> tuple[str, ...] | None:
-    """Aggregate related lines before threshold and tax checks. Non-terminal.
-
-    Returns the rule id to prepend when aggregation is detected, otherwise None.
-    """
+) -> dict[tuple[str, ...], list[int]]:
+    """Group expense-line amounts by the profile-owned related-purchase keys."""
     groups: dict[tuple[str, ...], list[int]] = {}
     for item in case.expense_items:
         key_parts: list[str] = []
@@ -461,35 +465,48 @@ def _rule_agg_001(
             else:
                 value = str(getattr(item, key, ""))
             key_parts.append(value)
-        key_tuple = tuple(key_parts)
-        groups.setdefault(key_tuple, []).append(item.amount_vnd)
+        groups.setdefault(tuple(key_parts), []).append(item.amount_vnd)
+    return groups
 
+
+def _rule_agg_001(
+    groups: dict[tuple[str, ...], list[int]]
+) -> tuple[str, ...] | None:
+    """Aggregate related lines before threshold and tax checks. Non-terminal.
+
+    Returns the rule id to prepend when aggregation is detected, otherwise None.
+    """
     if any(len(amounts) >= 2 for amounts in groups.values()):
         return ("RULE-AGG-001",)
     return None
 
 
 def _rule_auth_001(
-    case: ReimbursementCase, profile: OrganizationProfile, eligible_total: int, extra_rule_ids: tuple[str, ...] = ()
+    case: ReimbursementCase,
+    profile: OrganizationProfile,
+    related_purchase_totals: tuple[int, ...],
+    extra_rule_ids: tuple[str, ...] = (),
 ) -> ProcessingPacket | None:
     """Aggregated eligible amount exceeds routine-processing threshold."""
     op = profile.authority_threshold_operator
     threshold = profile.routine_processing_max_vnd
-    exceeds = (
-        eligible_total > threshold
-        if op.value == "greater_than"
-        else eligible_total >= threshold
-    )
-    if exceeds:
+    for related_purchase_total in related_purchase_totals:
+        exceeds = (
+            related_purchase_total > threshold
+            if op.value == "greater_than"
+            else related_purchase_total >= threshold
+        )
+        if not exceeds:
+            continue
         rules = (*extra_rule_ids, "RULE-AUTH-001")
         outcome, escalation = _build_escalation(
             escalation_type=EscalationType.AUTHORITY_REQUIRED,
-            addressee_role="CLUB_CHAIR",
+            addressee_role=profile.roles.approver_over_threshold,
             case_id=case.case_id,
             rule_id="RULE-AUTH-001",
-            amount_vnd=eligible_total,
+            amount_vnd=related_purchase_total,
             threshold_vnd=threshold,
-            related_evidence_ids=_EMPTY_EVIDENCE_ID,
+            related_evidence_ids=_resolve_evidence_ids(case, ()),
         )
         # Override triggered_rule_ids to include prior non-terminal rules
         outcome = ProcessingOutcome(
@@ -509,18 +526,23 @@ def _rule_auth_001(
         return ProcessingPacket(
             control_state=ControlState.ACTIVE,
             outcome=outcome,
-            escalation=_escalation_from_dict(escalation),
+            escalation=escalation,
         )
     return None
 
 
 def _rule_tax_001(
-    case: ReimbursementCase, profile: OrganizationProfile, eligible_total: int
+    case: ReimbursementCase,
+    profile: OrganizationProfile,
+    related_purchase_totals: tuple[int, ...],
 ) -> ProcessingPacket | None:
     """Conditional non-cash evidence rule."""
     if (
         profile.tax_regime_applies
-        and eligible_total >= profile.non_cash_evidence_threshold_vnd
+        and any(
+            total >= profile.non_cash_evidence_threshold_vnd
+            for total in related_purchase_totals
+        )
         and case.non_cash_evidence_verified is not True
     ):
         return _escalate(case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-TAX-001", ())
@@ -654,15 +676,21 @@ def _evaluate_policy(
         return pkt
 
     # 62 — aggregation (non-terminal)
-    extra_rule_ids = _rule_agg_001(case, profile_snapshot) or ()
+    related_purchase_groups = _aggregate_related_lines(case, profile_snapshot)
+    related_purchase_totals = tuple(
+        sum(amounts) for amounts in related_purchase_groups.values()
+    )
+    extra_rule_ids = _rule_agg_001(related_purchase_groups) or ()
 
     # 63 — authority threshold
-    pkt = _rule_auth_001(case, profile_snapshot, eligible, extra_rule_ids)
+    pkt = _rule_auth_001(
+        case, profile_snapshot, related_purchase_totals, extra_rule_ids
+    )
     if pkt is not None:
         return pkt
 
     # 70 — conditional tax
-    pkt = _rule_tax_001(case, profile_snapshot, eligible)
+    pkt = _rule_tax_001(case, profile_snapshot, related_purchase_totals)
     if pkt is not None:
         return pkt
 

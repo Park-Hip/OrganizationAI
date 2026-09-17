@@ -54,6 +54,10 @@ def evaluate(
 _FIXTURE_CREATED_AT = datetime(2026, 9, 10, 9, 0, 2, tzinfo=UTC)
 
 
+def _outcome_id(case_id: str) -> str:
+    return f"OUT-{case_id}"
+
+
 def _build_outcome(
     *,
     processing_result: ProcessingResult,
@@ -66,7 +70,7 @@ def _build_outcome(
     case_id: str,
 ) -> ProcessingOutcome:
     return ProcessingOutcome(
-        outcome_id=f"OUT-{case_id[-8:]}",
+        outcome_id=_outcome_id(case_id),
         processing_result=processing_result,
         escalation_type=escalation_type,
         approval_status=ApprovalStatus.PENDING_HUMAN_APPROVAL,
@@ -134,7 +138,7 @@ def _build_escalation(
     known_facts.append(f"resume: {resume_action}")
 
     outcome = ProcessingOutcome(
-        outcome_id=f"OUT-{case_id[-8:]}",
+        outcome_id=_outcome_id(case_id),
         processing_result=ProcessingResult.ESCALATED,
         escalation_type=escalation_type,
         approval_status=ApprovalStatus.PENDING_HUMAN_APPROVAL,
@@ -269,6 +273,21 @@ def _rule_fact_002(case: ReimbursementCase) -> ProcessingPacket | None:
 
 def _rule_fact_003(case: ReimbursementCase) -> ProcessingPacket | None:
     """A required fact cannot be deterministically derived from verified evidence."""
+    supplied_evidence_ids = {evidence.evidence_id for evidence in case.evidence}
+    missing_evidence_ids = tuple(
+        evidence_id
+        for item in case.expense_items
+        for evidence_id in item.evidence_ids
+        if evidence_id not in supplied_evidence_ids
+    )
+    if missing_evidence_ids:
+        return _escalate(
+            case,
+            EscalationType.FACT_UNKNOWN,
+            "MEMBER",
+            "RULE-FACT-003",
+            tuple(dict.fromkeys(missing_evidence_ids)),
+        )
     unverified_evidence_ids = tuple(
         evidence.evidence_id for evidence in case.evidence if not evidence.verified
     )

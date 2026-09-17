@@ -149,7 +149,7 @@ def _make_case(concise: dict) -> ReimbursementCase:
                     category=item["category"],
                     amount_vnd=item["amount_vnd"],
                     payment_method=PaymentMethod(item.get("payment_method", "BANK_TRANSFER")),
-                    evidence_ids=(f"E-1-{idx:03d}",),
+                    evidence_ids=("E-1-001",),
                     suspicion_flags=tuple(suspicion_flags),
                     line_assessment=LineAssessment.PENDING,
                 )
@@ -692,6 +692,54 @@ def test_fact_003_rejects_financial_evidence_without_amount(
             )
         }
     )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-FACT-003",)
+
+
+def test_outcome_id_uses_the_complete_case_id(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    first_packet = evaluate(
+        case.model_copy(update={"case_id": "CASE-A-12345678"}),
+        default_profile,
+        policy_snapshot,
+        ControlState.ACTIVE,
+    )
+    second_packet = evaluate(
+        case.model_copy(update={"case_id": "CASE-B-12345678"}),
+        default_profile,
+        policy_snapshot,
+        ControlState.ACTIVE,
+    )
+
+    assert first_packet.outcome is not None
+    assert second_packet.outcome is not None
+    assert first_packet.outcome.outcome_id == "OUT-CASE-A-12345678"
+    assert second_packet.outcome.outcome_id == "OUT-CASE-B-12345678"
+
+
+def test_fact_003_rejects_missing_line_evidence_reference(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    item = case.expense_items[0].model_copy(update={"evidence_ids": ("E-LINE",)})
+    case = case.model_copy(update={"expense_items": (item,)})
 
     packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
 

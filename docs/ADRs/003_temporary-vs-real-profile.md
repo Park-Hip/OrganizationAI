@@ -1,6 +1,6 @@
 # ADR-003: Separate temporary profile from future real policy
 
-**Status:** Accepted
+**Status:** Superseded
 **Date:** 2026-07
 **Decided by:** team
 

@@ -33,9 +33,9 @@ Keep each ADR to one page. Reference it from the code that implements it or from
 | --- | --- | --- | --- |
 | [001](001_use-fastapi-and-pydantic.md) | Use FastAPI with Pydantic v2 | Accepted | 2026-07 |
 | [002](002_append-only-audit-events.md) | Immutable append-only audit ledger | Accepted | 2026-07 |
-| [003](003_temporary-vs-real-profile.md) | Separate temporary profile from future real policy | Accepted | 2026-07 |
+| [003](003_temporary-vs-real-profile.md) | Separate temporary profile from future real policy | Superseded | 2026-07 |
 | [004](004_layer-0-1-2-separation.md) | Three-layer domain evaluation architecture | Accepted | 2026-07 |
-| [005](005_no-auth-in-temporary-phase.md) | No authentication in temporary development | Accepted | 2026-07 |
+| [005](005_no-auth-in-temporary-phase.md) | No authentication in temporary development | Superseded | 2026-07 |
 | [006](006_synthetic-pilot-and-public-private-surfaces.md) | Synthetic-pilot delivery and separate public/private surfaces | Accepted | 2026-09-15 |
 | [007](007_versioned-fixture-input-schema.md) | Versioned fixture-input schema with deterministic expansion | Accepted | 2026-09-15 |
 | [008](008_oidc-identity-adapter.md) | OIDC identity adapter with synthetic test identities | Accepted | 2026-09-15 |

@@ -1,6 +1,6 @@
 # ADR-005: No authentication in temporary phase
 
-**Status:** Accepted
+**Status:** Superseded
 **Date:** 2026-07
 **Decided by:** team
 

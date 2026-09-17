@@ -642,3 +642,58 @@ def test_duplicate_escalation_references_case_evidence(
     assert packet.escalation.related_evidence == tuple(
         evidence.evidence_id for evidence in case.evidence
     )
+
+
+def test_fact_001_rejects_unreadable_payment_proof(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    case = case.model_copy(
+        update={
+            "evidence": tuple(
+                evidence.model_copy(update={"readable": False})
+                if evidence.type is EvidenceType.PAYMENT_PROOF
+                else evidence
+                for evidence in case.evidence
+            )
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-FACT-001",)
+
+
+def test_fact_003_rejects_financial_evidence_without_amount(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    case = case.model_copy(
+        update={
+            "evidence": tuple(
+                evidence.model_copy(update={"amount_vnd": None})
+                if evidence.type
+                in (EvidenceType.INVOICE, EvidenceType.PAYMENT_PROOF)
+                else evidence
+                for evidence in case.evidence
+            )
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-FACT-003",)

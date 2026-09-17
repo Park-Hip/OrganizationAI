@@ -212,17 +212,16 @@ def _rule_sys_001(case: ReimbursementCase) -> ProcessingPacket | None:
 def _rule_fact_001(case: ReimbursementCase) -> ProcessingPacket | None:
     """Unreadable attachment or OCR confidence below threshold."""
     for evidence in case.evidence:
-        if evidence.type in (EvidenceType.INVOICE, EvidenceType.RECEIPT):
-            if not evidence.readable:
-                return _escalate(
-                    case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
-                    (evidence.evidence_id,),
-                )
-            if evidence.ocr_confidence is not None and evidence.ocr_confidence < 0.5:
-                return _escalate(
-                    case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
-                    (evidence.evidence_id,),
-                )
+        if not evidence.readable:
+            return _escalate(
+                case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
+                (evidence.evidence_id,),
+            )
+        if evidence.ocr_confidence is not None and evidence.ocr_confidence < 0.5:
+            return _escalate(
+                case, EscalationType.FACT_UNKNOWN, "MEMBER", "RULE-FACT-001",
+                (evidence.evidence_id,),
+            )
     return None
 
 
@@ -280,6 +279,26 @@ def _rule_fact_003(case: ReimbursementCase) -> ProcessingPacket | None:
             "MEMBER",
             "RULE-FACT-003",
             unverified_evidence_ids,
+        )
+    financial_evidence_ids_without_amount = tuple(
+        evidence.evidence_id
+        for evidence in case.evidence
+        if evidence.type
+        in (
+            EvidenceType.INVOICE,
+            EvidenceType.RECEIPT,
+            EvidenceType.PAYMENT_PROOF,
+            EvidenceType.ADVANCE_RECORD,
+        )
+        and evidence.amount_vnd is None
+    )
+    if financial_evidence_ids_without_amount:
+        return _escalate(
+            case,
+            EscalationType.FACT_UNKNOWN,
+            "MEMBER",
+            "RULE-FACT-003",
+            financial_evidence_ids_without_amount,
         )
     for item in case.expense_items:
         for flag in item.suspicion_flags:

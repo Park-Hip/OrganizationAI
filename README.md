@@ -2,15 +2,13 @@
 
 This repository tracks the MLAI Hackathon 2026 submission for Challenge A, The Escalation Referee.
 
-The current backend-development scenario is a synthetic campus student-club expense reimbursement referee. The participating club’s real manual workflow and pilot policy are pending validation.
+OrganizationalAI's Sprint 1 product is a **synthetic, AI-led reimbursement case-preparation demo**. One AI agent guides intake and prepares clear review packets; a deterministic, versioned policy engine controls classifications and escalates uncertainty to a human. Every agent result remains pending human approval.
 
-The temporary evaluator is specified only for synthetic routine cases under the explicitly temporary `TMP-DEV-001` profile and for safely escalating incomplete, out-of-policy, or authority-exceeding synthetic cases.
+The project uses only synthetic data in Sprint 1. It does not accept real reimbursement cases, approve or reject a case automatically, transfer money, or claim production readiness. Read [ADR-012](docs/ADRs/012_single-agent-sprint-1-pilot.md) for the agent boundary and deferred controls.
 
-## Pre-Sprint Status
+## Current implementation status
 
-This repository contains the temporary backend-development documentation, legacy planning material, and GitHub workflow templates.
-
-The temporary profile must be replaced before any real-workflow or policy claim is made.
+The runnable backend remains the explicitly temporary `TMP-DEV-001` implementation. It is historical synthetic development material, not the Sprint 1 reimbursement path, and must not be extended or relabelled as a club policy. The adopted reimbursement-v1 policy, contract, corpus, and architecture define the replacement path.
 
 ## Documentation
 
@@ -20,13 +18,11 @@ Read [docs/06_git_collaboration_playbook.md](docs/06_git_collaboration_playbook.
 
 It defines our branch, commit, and pull-request rules.
 
-## Backend development (temporary)
+## Backend development
 
-The backend foundation lives in [backend/](backend/) and is temporary, synthetic, and unvalidated.
-Read [backend/README.md](backend/README.md) for clean-clone prerequisites, setup, and quality commands.
-The backend provides pure Layer 1 normalization and Layer 2 policy evaluation, plus a limited temporary API that persists immutable synthetic decision traces.
-It does not make any real workflow claim.
-Its operational `/health` readiness endpoint is intentionally limited to process and database status.
+The backend lives in [backend/](backend/). Its currently wired endpoints are temporary, synthetic, and unvalidated; they are retained only as historical material. The next implementation path is reimbursement v1: deterministic policy evaluation and immutable audit history first, followed by a bounded single-agent adapter and public synthetic Verify surface.
+
+Read [backend/README.md](backend/README.md) for clean-clone prerequisites, quality commands, and the legacy/v1 boundary. Its operational `/health` readiness endpoint is intentionally limited to process and database status.
 
 ## Sprint Integrity
 

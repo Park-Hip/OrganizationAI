@@ -42,6 +42,7 @@ Keep each ADR to one page. Reference it from the code that implements it or from
 | [009](009_metadata-only-evidence-boundary.md) | Metadata-only evidence boundary | Accepted | 2026-09-15 |
 | [010](010_alcohol-escalation-ownership.md) | Alcohol escalation ownership and handoff | Accepted | 2026-09-15 |
 | [011](011_relocate-legacy-regression-fixture.md) | Relocate the legacy TMP-DEV-001 regression fixture | Accepted | 2026-09-15 |
+| [012](012_single-agent-sprint-1-pilot.md) | Single-agent Sprint 1 synthetic pilot | Accepted | 2026-09-16 |
 
 ---
 

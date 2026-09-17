@@ -239,7 +239,8 @@ def _rule_fact_002(case: ReimbursementCase) -> ProcessingPacket | None:
     line_total = sum(item.amount_vnd for item in case.expense_items)
     conflicting_evidence_ids: list[str] = []
     for evidence_types, expected_total in (
-        ((EvidenceType.INVOICE, EvidenceType.RECEIPT), case.declared_total_vnd),
+        ((EvidenceType.INVOICE,), case.declared_total_vnd),
+        ((EvidenceType.RECEIPT,), case.declared_total_vnd),
         ((EvidenceType.PAYMENT_PROOF,), case.declared_total_vnd),
         ((EvidenceType.ADVANCE_RECORD,), case.advance_amount_vnd),
     ):
@@ -442,12 +443,11 @@ def _rule_doc_001(case: ReimbursementCase) -> ProcessingPacket | None:
         if not case.advance_reference or not case.advance_amount_vnd:
             missing.append("advance_reference_or_amount")
 
-    if case.flow_type is FlowType.MEMBER_PAID:
-        has_payment_proof = any(
-            e.type is EvidenceType.PAYMENT_PROOF for e in case.evidence
-        )
-        if not has_payment_proof:
-            missing.append("payment_proof")
+    has_payment_proof = any(
+        e.type is EvidenceType.PAYMENT_PROOF for e in case.evidence
+    )
+    if not has_payment_proof:
+        missing.append("payment_proof")
 
     if missing:
         evidence_ids = tuple(e.evidence_id for e in case.evidence) or ("E-1-placeholder",)

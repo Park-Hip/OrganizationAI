@@ -744,3 +744,48 @@ def test_fact_003_rejects_missing_line_evidence_reference(
 
     assert packet.outcome is not None
     assert packet.outcome.triggered_rule_ids == ("RULE-FACT-003",)
+
+
+def test_doc_001_requires_payment_proof_for_advance_settlement(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "ADVANCE_SETTLEMENT",
+            "advance_amount_vnd": 1_000_000,
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+            "evidence": {"payment_proof": False},
+        }
+    )
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.triggered_rule_ids == ("RULE-DOC-001",)
+
+
+def test_fact_002_treats_invoice_and_receipt_as_corroborating(
+    default_profile: OrganizationProfile,
+    policy_snapshot: PolicySnapshot,
+) -> None:
+    case = _make_case(
+        {
+            "flow_type": "MEMBER_PAID",
+            "expense": {"total_vnd": 1_000_000, "category": "printing"},
+        }
+    )
+    receipt = Evidence(
+        evidence_id="E-1-002",
+        type=EvidenceType.RECEIPT,
+        file_hash="sha256-synthetic-receipt",
+        readable=True,
+        verified=True,
+        amount_vnd=1_000_000,
+    )
+    case = case.model_copy(update={"evidence": (*case.evidence, receipt)})
+
+    packet = evaluate(case, default_profile, policy_snapshot, ControlState.ACTIVE)
+
+    assert packet.outcome is not None
+    assert packet.outcome.processing_result is ProcessingResult.ROUTINE_PROCESSED

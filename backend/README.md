@@ -8,6 +8,8 @@ Its operational `/health` readiness endpoint remains intentionally limited to pr
 Everything here serves the explicitly temporary `TMP-DEV-001` development profile.
 No real reimbursement workflow, payment, or policy claim is implied.
 
+> **Sprint 1 direction:** This runnable temporary backend is historical synthetic material, not the next product path. Sprint 1 implements a separate reimbursement-v1 path: deterministic policy evaluation and immutable audit history first, then a bounded single AI intake and packet-preparation agent. Do not add agent features, policy behavior, or new demo controls to `TMP-DEV-001`. See [ADR-012](../docs/ADRs/012_single-agent-sprint-1-pilot.md) and [the target architecture](../docs/07_architecture.md).
+
 ## Prerequisites
 
 - Python 3.12 (pinned in `backend/.python-version`).
@@ -182,13 +184,13 @@ Layer 1 adds one pure policy module, `app/policy/normalization.py`, with no HTTP
 - `first_missing_field` identifies the first absent required business fact.
 - `question_for_field_path` returns the approved synthetic-safe repair question for that field path.
 
-The authoritative required-fact, normalization, field-priority, and repair-question contract is [docs/04_temporary_system_contract.md](../docs/04_temporary_system_contract.md).
+The former temporary-contract document was retired from the working documentation; the frozen legacy behavior remains evidenced by the legacy code and regression fixtures and is not the Sprint 1 policy source.
 
 ## Layer 2 evaluation
 
 Layer 2 adds `app/policy/evaluator.py` and its `evaluate_case` function.
 It accepts only a normalized case and injected immutable profile, and returns a `DecisionDraft` without selecting a profile or accessing infrastructure.
-The authoritative precedence, profile behavior, and question contract is [docs/04_temporary_system_contract.md](../docs/04_temporary_system_contract.md).
+The former temporary-contract document was retired from the working documentation; this legacy evaluator is not the Sprint 1 policy source.
 
 ## Temporary decision-history
 
@@ -210,7 +212,7 @@ The temporary Control Deck adds a narrow, synthetically labelled control layer o
 - **Errors.** Malformed commands return `422 INPUT_INVALID`, unknown traces `404 TRACE_NOT_FOUND`, and illegal transitions or reused keys `409 ILLEGAL_CONTROL_ACTION` or `409 CONTROL_IDEMPOTENCY_CONFLICT`.
 - **Undo.** `undo` compensates only the latest still-reversible control event by appending a `CONTROL_COMPENSATED` event that records `target_event_id` and the target's `prior_state`; it never edits or deletes the target.
 
-The authoritative vocabulary and transition matrix are in [docs/04_temporary_system_contract.md](../docs/04_temporary_system_contract.md).
+The former temporary-contract document was retired from the working documentation; this Control Deck remains legacy synthetic behavior only.
 
 ## Database integration tests
 
@@ -226,8 +228,10 @@ uv run pytest -m integration
 Use the same password you set for `POSTGRES_PASSWORD`.
 When `TEST_DATABASE_URL` is unset or the server is unreachable, the database integration tests skip with a clear message so the short quality gate still runs.
 
-## Not in current scope
+## Legacy implementation exclusions
+
+These exclusions describe `TMP-DEV-001` only. They do not prevent the separate Sprint 1 reimbursement-v1 path from adding the bounded AI agent defined in ADR-012.
 
 - No real human approval, rejection, override, reviewer queue, login, or role-based access control. The temporary Control Deck is a synthetic demo mechanic using the fixed `DEMO_REVIEWER` label and never a real authority.
-- No payment, authentication, upload, OCR, LLM, or LangChain/Langfuse features.
+- No payment, authentication, upload, OCR, LLM, or LangChain/Langfuse features in the legacy path.
 - No public deployment or production readiness claim.

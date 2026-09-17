@@ -4,6 +4,8 @@
 
 The project has adopted [the reimbursement workflow baseline](01_manual_reimbursement_workflow.md) derived from Policy Forge v1.2. It defines the workflow to be implemented next; it is not evidence that a real case may be processed yet.
 
+Sprint 1 is a synthetic, AI-led reimbursement case-preparation demo. One AI agent guides intake and prepares a review packet, while the deterministic versioned policy engine remains the sole source of classifications, calculations, rule IDs, and escalation types. See [ADR-012](ADRs/012_single-agent-sprint-1-pilot.md). The public Sprint 1 surface is no-login and synthetic-only; real authentication, real intake, and settlement remain deferred.
+
 The current backend still contains legacy synthetic `TMP-DEV-001` behavior while the workflow, MVP, policy, system contract, and corpus transition into implementation. The former temporary source documents have been removed from the working documentation; Git history retains them. Temporary records and endpoints remain synthetic historical material and are not a club policy, financial procedure, user-research finding, or public-demo evidence.
 
 ## Read in this order
@@ -11,7 +13,8 @@ The current backend still contains legacy synthetic `TMP-DEV-001` behavior while
 1. [00_challenge_a_rubric.md](00_challenge_a_rubric.md) — challenge/scoring reference.
 2. [06_git_collaboration_playbook.md](06_git_collaboration_playbook.md) — required before any branch, commit, or pull request.
 3. [01_manual_reimbursement_workflow.md](01_manual_reimbursement_workflow.md) — the project-approved workflow baseline and its real-operation gate.
-4. Implementation-transition chain below — the source for current behavior and the ordered replacement work.
+4. [ADR-012](ADRs/012_single-agent-sprint-1-pilot.md) — approved single-agent Sprint 1 delivery boundary.
+5. Implementation-transition chain below — the source for current behavior and the ordered replacement work.
 
 ## Implementation transition chain
 
@@ -48,4 +51,6 @@ The former product specification, proposed policy, contract, corpus, research pl
 - Mark every temporary record, result, and business-operation UI/API response with its synthetic/unvalidated provenance. The operational `/health` readiness response is exempt and retains its minimal status/database contract.
 - Do not copy `TEST_ALLOWED`, `TEST_BLOCKED`, or `1000` into a real club policy.
 - Do not place real personal, financial, receipt, vendor, or bank data in committed artifacts.
+- The Sprint 1 agent may draft, clarify, explain, and call schema-validated tools; it may not make policy decisions, infer or verify financial facts, approve, reject, transfer money, or bypass controls.
+- Keep real OIDC/login/RBAC, real case intake, receipt/OCR storage, RAG, fine-tuning, multi-agent orchestration, payment, accounting, and notifications out of Sprint 1.
 - Complete the controlled migration in this order: manual workflow → MVP specification → pilot policy → system contract → case corpus. Revise implementation, tests, API wording, and UI together only after those documents are aligned.

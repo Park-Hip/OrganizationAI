@@ -142,7 +142,7 @@ def _policy_snapshot() -> PolicySnapshot:
     )
 
 
-def test_evaluator_signature_is_frozen_and_not_implemented_in_setup() -> None:
+def test_evaluator_signature_is_frozen() -> None:
     signature = inspect.signature(evaluate)
 
     assert tuple(signature.parameters) == (
@@ -152,14 +152,6 @@ def test_evaluator_signature_is_frozen_and_not_implemented_in_setup() -> None:
         "control_state",
     )
     assert str(signature.return_annotation) == "ProcessingPacket"
-
-    with pytest.raises(NotImplementedError, match="Lane A"):
-        evaluate(
-            _member_paid_case(),
-            _profile(),
-            _policy_snapshot(),
-            ControlState.ACTIVE,
-        )
 
 
 def test_packet_enforces_paused_and_routine_output_invariants() -> None:

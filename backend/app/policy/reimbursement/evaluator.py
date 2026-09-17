@@ -6,7 +6,7 @@ implementation without changing the domain or infrastructure boundary.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from app.domain.reimbursement import (
@@ -333,9 +333,7 @@ def _rule_cat_001(case: ReimbursementCase, profile: OrganizationProfile) -> Proc
         if item.category not in all_known:
             return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-CAT-001",
                              tuple(item.evidence_ids))
-        if item.category in profile.prohibited_categories and item.category not in (
-            profile.legally_prohibited_categories,
-        ):
+        if item.category in profile.prohibited_categories and item.category not in profile.legally_prohibited_categories:
             if item.category != "alcohol":
                 return _escalate(case, EscalationType.OUT_OF_POLICY, "CLUB_CHAIR", "RULE-CAT-001",
                                  tuple(item.evidence_ids))
@@ -458,7 +456,7 @@ def _rule_agg_001(
         key_parts: list[str] = []
         for key in profile.aggregation_keys:
             if key.endswith("_normalized"):
-                base = key[:-13]
+                base = key[:-11]
                 value = str(getattr(item, base, "")).lower().strip()
             else:
                 value = str(getattr(item, key, ""))
